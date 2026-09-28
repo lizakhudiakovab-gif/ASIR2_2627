@@ -1,12 +1,14 @@
-# Configuración de Ubuntu 26.04 LTS
+# Configuración de Ubuntu y acceso remoto por SSH
 
-En estos apuntes voy guardando todo el proceso que hemos realizado con mi máquina virtual de Ubuntu 26.04 LTS: actualización del sistema, instalación de SSH, Guest Additions, configuración de red, IP estática, ping y Firewall de Windows.
+En estos apuntes se recoge paso a paso el proceso realizado con la máquina virtual Ubuntu: preparación del sistema, instalación de SSH, Guest Additions, configuración de red, IP estática, pruebas con ping, Firewall de Windows y conexión remota por SSH.
 
 ---
 
-# 1. Preparar Ubuntu
+## 1. Preparar Ubuntu
 
-Antes de instalar los programas actualizamos la lista de paquetes:
+Antes de instalar SSH actualizamos el sistema.
+
+Primero actualizamos la lista de paquetes disponibles:
 
 ```bash
 sudo apt update
@@ -28,17 +30,17 @@ sudo apt install bzip2
 
 ---
 
-# 2. Instalar SSH
+## 2. Instalar y activar SSH
 
-Instalamos el servidor SSH:
+Instalamos el servidor OpenSSH:
 
 ```bash
 sudo apt install openssh-server -y
 ```
 
-SSH nos permite conectarnos de forma remota a nuestra máquina Ubuntu desde otro ordenador.
+SSH permite conectarnos de forma remota a Ubuntu desde otro ordenador.
 
-Activamos SSH para que se inicie automáticamente cuando arranque Ubuntu:
+Activamos SSH para que se inicie automáticamente al arrancar Ubuntu:
 
 ```bash
 sudo systemctl enable ssh
@@ -50,7 +52,13 @@ Iniciamos el servicio:
 sudo systemctl start ssh
 ```
 
-Podemos comprobar su estado con:
+También se pueden hacer las dos cosas con:
+
+```bash
+sudo systemctl enable --now ssh
+```
+
+Comprobamos que SSH funciona:
 
 ```bash
 sudo systemctl status ssh
@@ -62,30 +70,38 @@ Si aparece:
 active (running)
 ```
 
-significa que SSH está funcionando correctamente.
+significa que el servicio está funcionando correctamente.
+
+Si tenemos UFW activado, permitimos las conexiones SSH:
+
+```bash
+sudo ufw allow ssh
+```
 
 ---
 
-# 3. Instalar Guest Additions
+## 3. Instalar Guest Additions
 
-Para instalar las Guest Additions de VirtualBox vamos a:
+En VirtualBox vamos a:
 
-**Dispositivos > Insertar imagen de CD de las Guest Additions**
+```text
+Dispositivos > Insertar imagen de CD de las Guest Additions
+```
 
-Las Guest Additions sirven para mejorar la integración entre la máquina virtual Ubuntu y el ordenador real.
+Las Guest Additions mejoran la integración entre Ubuntu y el ordenador físico.
 
-Por ejemplo, permiten mejorar:
+Por ejemplo, mejoran:
 
 - La resolución de pantalla.
 - El funcionamiento del ratón.
 - El portapapeles compartido.
-- La integración entre la máquina virtual y el ordenador real.
+- La integración entre la máquina virtual y el equipo real.
 
 ---
 
-# 4. Comprobar la dirección IP
+## 4. Comprobar la dirección IP
 
-Para ver las interfaces de red y las direcciones IP utilizamos:
+Para ver las interfaces de red y sus direcciones IP usamos:
 
 ```bash
 ip a
@@ -97,13 +113,13 @@ Nuestra interfaz de red es:
 enp0s3
 ```
 
-Cuando utilizábamos NAT, nuestra máquina tenía una dirección parecida a:
+Cuando utilizábamos NAT teníamos una IP parecida a:
 
 ```text
 10.0.2.15/24
 ```
 
-También podemos consultar rápidamente las IP de nuestra máquina con:
+También podemos ver rápidamente las direcciones IP con:
 
 ```bash
 hostname -I
@@ -111,128 +127,153 @@ hostname -I
 
 ---
 
-# 5. Modos de red de VirtualBox
+# 5. Configurar la red de VirtualBox
 
-Para configurar la red de nuestra máquina virtual vamos a:
+Para cambiar el tipo de conexión de la máquina virtual:
 
-**Configuración > Red > Adaptador 1**
-
-VirtualBox permite utilizar diferentes modos de red.
+1. Apagamos la máquina virtual.
+2. Entramos en VirtualBox.
+3. Seleccionamos la máquina.
+4. Vamos a `Configuración > Red > Adaptador 1`.
+5. Elegimos el modo de red.
+6. Guardamos los cambios.
+7. Volvemos a iniciar Ubuntu.
 
 ## NAT
 
-Es el modo que normalmente viene configurado por defecto.
+Es el modo que suele venir por defecto.
 
-La máquina virtual puede acceder a Internet utilizando la conexión del ordenador real.
+La máquina virtual puede acceder a Internet utilizando la conexión del ordenador físico.
 
-Es fácil de utilizar, pero otros equipos de la red no pueden conectarse directamente a la máquina virtual.
+Es fácil de configurar, pero otros equipos de nuestra red no pueden conectarse directamente a la máquina virtual.
 
 ## Adaptador puente
 
-La máquina virtual se conecta directamente a la misma red que el ordenador real.
+La máquina virtual se conecta directamente a la misma red que el ordenador físico.
 
-Recibe su propia dirección IP, como si fuese otro ordenador conectado a la red.
+Funciona como si fuese otro ordenador conectado a la red y recibe su propia dirección IP.
 
-Es útil cuando queremos conectarnos a la máquina virtual mediante SSH desde otro equipo.
+```text
+Router
+  |
+  |---- Windows
+  |
+  |---- Ubuntu (MV)
+```
+
+Este modo es útil para conectarnos directamente a Ubuntu mediante SSH.
+
+Al seleccionar Adaptador puente debemos elegir la tarjeta de red que está utilizando nuestro PC, por ejemplo Wi-Fi o Ethernet.
 
 ## Red interna
 
 Crea una red privada entre máquinas virtuales.
 
-Las máquinas virtuales pueden comunicarse entre ellas, pero quedan aisladas del ordenador real y de Internet.
+Las máquinas virtuales pueden comunicarse entre ellas, pero quedan aisladas del ordenador físico y de Internet.
 
 ## Adaptador sólo-anfitrión
 
-Crea una red entre el ordenador real y las máquinas virtuales.
-
-Permite la comunicación:
+Permite crear una red entre el ordenador físico y las máquinas virtuales.
 
 ```text
-Ordenador real <----> Máquina virtual
+Windows <----> Ubuntu
 ```
 
 Normalmente no proporciona acceso a Internet por sí solo.
+
+## Red NAT
+
+Es parecida a NAT, pero permite tener varias máquinas virtuales dentro de la misma red.
+
+Las máquinas virtuales pueden comunicarse entre ellas y también acceder a Internet.
 
 ## Controlador genérico
 
 Se utiliza para configuraciones de red más específicas o avanzadas.
 
-## Red NAT
-
-Es parecida al modo NAT, pero permite tener varias máquinas virtuales dentro de la misma red.
-
-Las máquinas virtuales pueden comunicarse entre ellas y también tener acceso a Internet.
-
 ## Red en la nube
 
 Permite conectar la máquina virtual a una infraestructura de red en la nube.
 
-Se utiliza principalmente para configuraciones más avanzadas.
+Se utiliza principalmente en configuraciones avanzadas.
 
 ## No conectado
 
-El adaptador de red existe, pero VirtualBox simula que el cable de red está desconectado.
+El adaptador existe, pero VirtualBox simula que el cable de red está desconectado.
 
-La máquina virtual no tendrá conexión mediante ese adaptador.
+Por lo tanto, no tendremos conexión mediante ese adaptador.
 
 ---
 
-# 6. Configuración IPv4 desde la interfaz gráfica
+# 6. Configuración IPv4 en Ubuntu
 
-En Ubuntu podemos configurar la red desde:
+Ubuntu permite configurar la dirección IP de forma automática o manual.
 
-**Configuración > Red > Cableada > IPv4**
+Vamos a:
 
-Aquí podemos elegir entre configuración automática o manual.
+```text
+Configuración > Red > Cableada > IPv4
+```
 
 ## Automático (DHCP)
 
-La dirección IP y otros datos de red se obtienen automáticamente desde un servidor DHCP.
-
-Por ejemplo:
+El servidor DHCP proporciona automáticamente los datos necesarios:
 
 - Dirección IP.
 - Máscara de red.
 - Puerta de enlace.
 - DNS.
 
+Es más cómodo, pero la dirección IP puede cambiar.
+
 ## Manual
 
-Nos permite introducir nosotros mismos los datos de red.
+Nosotros introducimos los datos de red.
 
-Podemos configurar:
+Tenemos que configurar:
 
 - Dirección IP.
 - Máscara.
 - Puerta de enlace.
 - DNS.
 
-Esto es útil cuando queremos tener una IP fija, por ejemplo para trabajar con SSH y evitar que nuestra dirección cambie.
+Esto permite tener una IP fija, algo útil para trabajar con SSH.
 
 ---
 
-# 7. Configurar una IP estática mediante comandos
+# 7. Configurar una IP estática con Netplan
 
-También podemos configurar una IP estática desde la terminal utilizando Netplan.
+También podemos configurar una IP fija mediante comandos.
 
-Primero abrimos el archivo de configuración:
+Primero comprobamos el nombre de nuestra interfaz:
+
+```bash
+ip a
+```
+
+En nuestro caso es:
+
+```text
+enp0s3
+```
+
+Podemos comprobar qué archivos de Netplan tenemos con:
+
+```bash
+ls /etc/netplan/
+```
+
+Después abrimos nuestro archivo de configuración. En nuestro caso:
 
 ```bash
 sudo nano /etc/netplan/00-installer-config.yaml
 ```
 
-Dentro del archivo configuramos nuestra interfaz de red.
-
-En mi caso quería utilizar la IP:
-
-```text
-172.16.5.150
-```
-
-La configuración utilizada fue:
+Configuramos la IP:
 
 ```yaml
 network:
+  version: 2
   ethernets:
     enp0s3:
       dhcp4: false
@@ -242,24 +283,31 @@ network:
         - to: default
           via: 172.16.0.1
       nameservers:
-        addresses: [8.8.8.8, 8.8.4.4]
-  version: 2
+        addresses:
+          - 8.8.8.8
+          - 8.8.4.4
 ```
 
 ### Explicación
+
+```text
+enp0s3
+```
+
+Es nuestra interfaz de red.
 
 ```yaml
 dhcp4: false
 ```
 
-Desactiva DHCP para que Ubuntu no obtenga automáticamente una dirección IP.
+Desactiva DHCP porque queremos utilizar una dirección IP fija.
 
 ```yaml
 addresses:
   - 172.16.5.150/24
 ```
 
-Indica la dirección IP fija que queremos utilizar.
+Establece nuestra dirección IP.
 
 El `/24` corresponde a la máscara:
 
@@ -267,26 +315,32 @@ El `/24` corresponde a la máscara:
 255.255.255.0
 ```
 
+La ruta:
+
 ```yaml
 routes:
   - to: default
     via: 172.16.0.1
 ```
 
-Indica la ruta por defecto y la puerta de enlace.
+establece la puerta de enlace utilizada para salir de nuestra red.
+
+Los DNS:
 
 ```yaml
 nameservers:
-  addresses: [8.8.8.8, 8.8.4.4]
+  addresses:
+    - 8.8.8.8
+    - 8.8.4.4
 ```
 
-Indica los servidores DNS que utilizará Ubuntu.
+se utilizan para resolver nombres de dominio.
 
 ---
 
-# 8. Guardar el archivo de Netplan
+# 8. Guardar y aplicar la configuración
 
-Después de modificar el archivo en `nano`, guardamos utilizando:
+Después de modificar el archivo en Nano guardamos con:
 
 ```text
 Ctrl + O
@@ -304,67 +358,59 @@ Y salimos con:
 Ctrl + X
 ```
 
----
-
-# 9. Aplicar la configuración de red
-
-Después de guardar los cambios ejecutamos:
+Aplicamos los cambios:
 
 ```bash
 sudo netplan apply
 ```
 
-Este comando aplica la nueva configuración de red.
-
 ---
 
-# 10. Comprobar que la IP ha cambiado
+# 9. Comprobar la nueva IP
 
-Utilizamos:
+Volvemos a ejecutar:
 
 ```bash
 ip a
 ```
 
-Buscamos nuestra interfaz:
+Buscamos:
 
 ```text
 enp0s3
 ```
 
-Y comprobamos que aparece:
+Y comprobamos que aparece nuestra IP:
 
 ```text
 inet 172.16.5.150/24
 ```
 
-También podemos utilizar:
+También podemos usar:
 
 ```bash
 hostname -I
 ```
 
-para ver rápidamente las direcciones IP de Ubuntu.
-
 ---
 
-# 11. Comprobar la puerta de enlace
+# 10. Comprobar la puerta de enlace
 
-Podemos consultar las rutas de nuestra máquina con:
+Ejecutamos:
 
 ```bash
 ip route
 ```
 
-Aquí podemos comprobar cuál es nuestra puerta de enlace y por qué interfaz está saliendo el tráfico.
+Este comando muestra las rutas de nuestra máquina y nos permite comprobar la puerta de enlace que estamos utilizando.
 
 ---
 
-# 12. Comprobar la conexión con ping
+# 11. Comprobar la conexión con ping
 
-El comando `ping` sirve para comprobar si existe comunicación entre dos equipos.
+`ping` sirve para comprobar si existe comunicación entre dos equipos.
 
-La estructura es:
+Utilizamos:
 
 ```bash
 ping IP_DEL_OTRO_EQUIPO
@@ -376,15 +422,15 @@ Por ejemplo:
 ping 172.16.5.199
 ```
 
-Si obtenemos respuestas parecidas a:
+Si aparecen respuestas parecidas a:
 
 ```text
 64 bytes from 172.16.5.199
 ```
 
-significa que existe comunicación con el otro equipo.
+significa que existe comunicación.
 
-Para detener el ping utilizamos:
+Para detener el ping:
 
 ```text
 Ctrl + C
@@ -392,21 +438,23 @@ Ctrl + C
 
 ---
 
-# 13. Ping entre Ubuntu y Windows
+# 12. Hacer ping entre Ubuntu y Windows
 
-Queríamos comprobar la comunicación entre:
+Queremos comprobar la comunicación entre:
 
 ```text
-Máquina virtual Ubuntu <----> Máquina real Windows
+Máquina virtual Ubuntu <----> Máquina física Windows
 ```
 
-Primero necesitamos conocer la IP del ordenador Windows.
+Primero comprobamos la IP de Windows.
 
-En Windows podemos utilizar:
+Abrimos CMD o PowerShell y ejecutamos:
 
 ```powershell
 ipconfig
 ```
+
+Buscamos la dirección IPv4 del adaptador que estamos utilizando.
 
 Después, desde Ubuntu hacemos:
 
@@ -422,111 +470,159 @@ ping 172.16.5.199
 
 ---
 
-# 14. Problema con el Firewall de Windows
+# 13. Permitir ping en el Firewall de Windows
 
-Aunque las dos máquinas estén correctamente conectadas, Windows puede bloquear las solicitudes de `ping`.
+Aunque la configuración de red sea correcta, Windows puede bloquear las solicitudes de `ping`.
 
-Esto ocurre porque el Firewall de Windows puede bloquear las solicitudes ICMP entrantes.
-
-Para permitirlas abrimos **PowerShell como administrador** en Windows.
-
-Ejecutamos:
+Para permitirlas abrimos **PowerShell como administrador** y ejecutamos:
 
 ```powershell
 Enable-NetFirewallRule -Name "FPS-ICMP4-ERQ-In"
 ```
 
-Este comando activa la regla del Firewall de Windows que permite recibir solicitudes **ICMPv4**.
+Este comando habilita la regla del Firewall de Windows que permite recibir solicitudes ICMPv4.
 
-ICMP es el protocolo utilizado por herramientas como `ping` para comprobar la comunicación entre equipos.
+ICMP es el protocolo utilizado por `ping`.
 
-Después volvemos a Ubuntu y hacemos:
+Después volvemos a Ubuntu y repetimos:
 
 ```bash
 ping IP_DE_WINDOWS
 ```
 
-Si recibimos respuesta significa que la máquina virtual Ubuntu puede comunicarse correctamente con la máquina real Windows.
+Si recibimos respuesta, existe comunicación entre Ubuntu y Windows.
 
 ---
 
-# 15. Comandos utilizados
+# 14. Conectarnos por SSH desde Windows
 
-Estos son los principales comandos que hemos utilizado durante todo el proceso:
+Una vez que tenemos:
+
+- SSH instalado y funcionando.
+- La red configurada.
+- La IP de Ubuntu.
+- Comunicación entre los equipos.
+
+Podemos intentar conectarnos desde Windows.
+
+Abrimos CMD, PowerShell o Terminal.
+
+## Con Adaptador puente
+
+Ejecutamos:
+
+```bash
+ssh USUARIO_UBUNTU@IP_DE_UBUNTU
+```
+
+Por ejemplo, si nuestra IP es `172.16.5.150`:
+
+```bash
+ssh usuario@172.16.5.150
+```
+
+Tenemos que sustituir `usuario` por el nombre real de nuestro usuario de Ubuntu.
+
+La primera vez puede aparecer una pregunta para confirmar que confiamos en el equipo.
+
+Escribimos:
+
+```text
+yes
+```
+
+Después introducimos la contraseña de nuestro usuario de Ubuntu.
+
+Si la conexión funciona, podremos utilizar la terminal de Ubuntu desde Windows.
+
+---
+
+# 15. SSH utilizando NAT y reenvío de puertos
+
+Si utilizamos NAT en vez de Adaptador puente, podemos configurar un reenvío de puertos en VirtualBox.
+
+Por ejemplo:
+
+```text
+Puerto del PC: 2222
+        |
+        v
+Puerto SSH de Ubuntu: 22
+```
+
+Después nos conectamos desde Windows con:
+
+```bash
+ssh usuario@127.0.0.1 -p 2222
+```
+
+`127.0.0.1` hace referencia al propio ordenador físico.
+
+La opción:
+
+```text
+-p 2222
+```
+
+indica que queremos utilizar el puerto `2222` del ordenador físico, que VirtualBox reenviará al puerto SSH de la máquina virtual.
+
+---
+
+# 16. Comandos principales utilizados
+
+Ubuntu:
 
 ```bash
 sudo apt update
 sudo apt upgrade
+sudo apt install bzip2
 sudo apt install openssh-server -y
 sudo systemctl enable ssh
 sudo systemctl start ssh
 sudo systemctl status ssh
-sudo apt install bzip2
+sudo ufw allow ssh
 ip a
 hostname -I
 ip route
+ls /etc/netplan/
 sudo nano /etc/netplan/00-installer-config.yaml
 sudo netplan apply
 ping IP
 ```
 
-En Windows hemos utilizado:
+Windows:
 
 ```powershell
 ipconfig
 ```
 
-y:
+Para permitir ping:
 
 ```powershell
 Enable-NetFirewallRule -Name "FPS-ICMP4-ERQ-In"
+```
+
+Para conectarnos por SSH:
+
+```bash
+ssh usuario@IP_DE_UBUNTU
 ```
 
 ---
 
 # Resumen
 
-Durante esta práctica hemos aprendido a preparar una máquina virtual Ubuntu y configurar su red.
+Durante esta práctica hemos preparado nuestra máquina virtual Ubuntu para poder acceder a ella de forma remota.
 
-Hemos instalado y activado SSH, instalado las Guest Additions de VirtualBox, visto los diferentes modos de red de VirtualBox y aprendido la diferencia entre utilizar DHCP y configurar una IP manualmente.
+Primero actualizamos el sistema, instalamos SSH y las Guest Additions. Después estudiamos los diferentes modos de red de VirtualBox y configuramos la máquina para poder comunicarnos con ella desde Windows.
 
-También hemos configurado una IP estática utilizando Netplan:
+También aprendimos a configurar una dirección IP estática mediante Netplan. En nuestro caso utilizamos:
 
 ```text
-172.16.5.150/24
+IP: 172.16.5.150/24
+Puerta de enlace: 172.16.0.1
+DNS: 8.8.8.8 y 8.8.4.4
+Interfaz: enp0s3
 ```
 
-
-
-Después hemos utilizado `ping` para comprobar la comunicación entre nuestra máquina virtual Ubuntu y nuestra máquina real Windows.
-
-Finalmente, hemos configurado el Firewall de Windows para permitir las solicitudes ICMPv4 y poder realizar ping entre las dos máquinas.
-
-
-
-## 6. Probar la conexión SSH desde la máquina física
-
-Una vez configurado SSH y la red, probamos la conexión desde la terminal o CMD de nuestro ordenador físico.
-
-### Si usamos Adaptador Puente
-
-Ejecutamos:
-
-ssh usuario_de_la_mv@IP_DE_LA_MV
-
-Por ejemplo:
-
-ssh ubuntu@192.168.1.50
-
-Tenemos que poner el usuario de Ubuntu y la IP que tiene nuestra máquina virtual.
-
-Después nos pedirá la contraseña del usuario de Ubuntu.
-
-
-### Si usamos NAT con reenvío de puertos
-
-Si hemos configurado, por ejemplo, el puerto 2222 para acceder al puerto 22 de la máquina virtual, ejecutamos:
-
-ssh usuario_de_la_mv@127.0.0.1 -p 2222
-
-127.0.0.1 hace referencia a nuestro propio ordenador y -p 2222 indica el puerto que hemos configurado para acceder por SSH.
+Finalmente utilizamos `ping` para comprobar la comunicación entre Ubuntu y Windows, configuramos el Firewall de Windows para permitir ICMP y probamos el acceso remoto mediante SSH.
