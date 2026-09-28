@@ -496,6 +496,37 @@ También hemos configurado una IP estática utilizando Netplan:
 172.16.5.150/24
 ```
 
+
+
 Después hemos utilizado `ping` para comprobar la comunicación entre nuestra máquina virtual Ubuntu y nuestra máquina real Windows.
 
 Finalmente, hemos configurado el Firewall de Windows para permitir las solicitudes ICMPv4 y poder realizar ping entre las dos máquinas.
+
+
+
+## 6. Probar la conexión SSH desde la máquina física
+
+Una vez configurado SSH y la red, probamos la conexión desde la terminal o CMD de nuestro ordenador físico.
+
+### Si usamos Adaptador Puente
+
+Ejecutamos:
+
+ssh usuario_de_la_mv@IP_DE_LA_MV
+
+Por ejemplo:
+
+ssh ubuntu@192.168.1.50
+
+Tenemos que poner el usuario de Ubuntu y la IP que tiene nuestra máquina virtual.
+
+Después nos pedirá la contraseña del usuario de Ubuntu.
+
+
+### Si usamos NAT con reenvío de puertos
+
+Si hemos configurado, por ejemplo, el puerto 2222 para acceder al puerto 22 de la máquina virtual, ejecutamos:
+
+ssh usuario_de_la_mv@127.0.0.1 -p 2222
+
+127.0.0.1 hace referencia a nuestro propio ordenador y -p 2222 indica el puerto que hemos configurado para acceder por SSH.
