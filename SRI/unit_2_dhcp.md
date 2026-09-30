@@ -1,157 +1,104 @@
-# Configuración de un servidor DHCP en Ubuntu
+# Configuración de DHCP desde la máquina cliente
 
-En estos apuntes se recoge paso a paso el proceso realizado para configurar una máquina Ubuntu como servidor DHCP y otra máquina Ubuntu como cliente. El servidor tendrá una IP fija y será el encargado de asignar automáticamente una dirección IP al cliente.
+En esta práctica utilizamos dos máquinas virtuales Ubuntu.
+
+La máquina José funcionará como servidor DHCP y tendrá la dirección IP fija:
+
+```text
+172.16.5.150
+```
+
+La máquina Liza funcionará como cliente.
+
+La diferencia importante es que la instalación y configuración del servidor DHCP de José la realizaremos remotamente desde la máquina cliente Liza mediante SSH.
+
+De esta forma trabajamos desde el cliente, entramos remotamente al servidor y desde ahí instalamos y configuramos DHCP.
 
 ---
 
-## 1. Configurar las tarjetas de red en VirtualBox
+## 1. Preparar la máquina cliente
 
-Antes de empezar configuramos las tarjetas de red de las dos máquinas virtuales.
+Primero iniciamos la máquina Liza.
 
-En la máquina servidor José configuramos dos adaptadores.
-
-El Adaptador 1 lo ponemos como **Red interna** y utilizamos el nombre:
-
-```text
-red-dhcp
-```
-
-Este adaptador será el que utilizaremos para comunicar el servidor con el cliente y para trabajar con DHCP.
-
-El Adaptador 2 lo configuramos como:
-
-```text
-NAT
-```
-
-Este segundo adaptador permite que el servidor tenga conexión a Internet.
-
-Por tanto, el servidor queda de la siguiente forma:
-
-```text
-Adaptador 1 → Red interna → red-dhcp
-Adaptador 2 → NAT
-```
-
-En la máquina cliente Liza configuramos también el Adaptador 1 como:
-
-```text
-Red interna → red-dhcp
-```
-
-Es importante que las dos máquinas tengan exactamente el mismo nombre de red interna para que puedan comunicarse.
-
-También podemos añadir un segundo adaptador NAT al cliente para que tenga conexión a Internet.
-
----
-
-## 2. Comprobar las interfaces de red del servidor
-
-Una vez iniciamos el servidor comprobamos las interfaces de red disponibles.
-
-Ejecutamos:
+Comprobamos su configuración de red:
 
 ```bash
 ip a
 ```
 
-En nuestro caso tenemos dos interfaces principales.
-
-La interfaz:
+La interfaz que utilizamos para comunicarnos con José es:
 
 ```text
 enp0s3
 ```
 
-corresponde a la red interna `red-dhcp`.
-
-La interfaz:
+Las dos máquinas deben estar conectadas a la misma red interna de VirtualBox:
 
 ```text
-enp0s8
-```
-
-corresponde al adaptador NAT que utilizamos para tener conexión a Internet.
-
----
-
-## 3. Configurar una IP fija en el servidor
-
-El servidor DHCP necesita tener una dirección IP fija.
-
-En nuestro caso queremos utilizar:
-
-```text
-172.16.5.150/24
-```
-
-Abrimos el archivo de configuración de Netplan:
-
-```bash
-sudo nano /etc/netplan/00-installer-config.yaml
-```
-
-Configuramos las interfaces de esta forma:
-
-```yaml
-network:
-  version: 2
-  ethernets:
-    enp0s3:
-      dhcp4: false
-      addresses:
-        - 172.16.5.150/24
-    enp0s8:
-      dhcp4: true
-```
-
-En `enp0s3` ponemos:
-
-```text
-dhcp4: false
-```
-
-porque no queremos que el servidor reciba automáticamente una dirección IP. Queremos que siempre utilice la IP fija `172.16.5.150`.
-
-En cambio, en `enp0s8` ponemos:
-
-```text
-dhcp4: true
-```
-
-porque esta interfaz corresponde al adaptador NAT y puede recibir automáticamente su configuración.
-
-Guardamos el archivo con:
-
-```text
-Ctrl + O
-Enter
-Ctrl + X
-```
-
-Después aplicamos la nueva configuración:
-
-```bash
-sudo netplan apply
-```
-
-Comprobamos el resultado:
-
-```bash
-ip a
-```
-
-En `enp0s3` debe aparecer:
-
-```text
-172.16.5.150/24
+red-dhcp
 ```
 
 ---
 
-## 4. Instalar el servidor DHCP
+## 2. Comprobar la comunicación con el servidor
 
-Primero actualizamos la lista de paquetes disponibles:
+Antes de conectarnos por SSH comprobamos que Liza puede comunicarse con José.
+
+Desde Liza ejecutamos:
+
+```bash
+ping -c 4 172.16.5.150
+```
+
+`172.16.5.150` es la dirección IP del servidor José.
+
+Si recibimos respuestas como:
+
+```text
+64 bytes from 172.16.5.150
+```
+
+significa que existe comunicación entre las dos máquinas.
+
+---
+
+## 3. Conectarnos desde el cliente al servidor mediante SSH
+
+Desde la terminal de Liza ejecutamos:
+
+```bash
+ssh jose@172.16.5.150
+```
+
+Antes de conectarnos, nuestro terminal muestra:
+
+```text
+liza@liza-VirtualBox:~$
+```
+
+Cuando entramos correctamente mediante SSH pasa a mostrar:
+
+```text
+jose@jose-VirtualBox:~$
+```
+
+Esto significa que seguimos utilizando físicamente la máquina cliente Liza, pero los comandos que escribamos a partir de este momento se ejecutarán en el servidor José.
+
+Como anteriormente configuramos la autenticación mediante claves SSH, podemos entrar sin introducir la contraseña de José.
+
+---
+
+## 4. Instalar DHCP en el servidor desde el cliente
+
+Una vez conectados mediante SSH veremos:
+
+```text
+jose@jose-VirtualBox:~$
+```
+
+Aunque estamos trabajando desde la máquina Liza, en este momento estamos controlando remotamente el servidor José.
+
+Primero actualizamos la lista de paquetes del servidor:
 
 ```bash
 sudo apt update
@@ -163,39 +110,28 @@ Después instalamos el servidor DHCP:
 sudo apt install isc-dhcp-server -y
 ```
 
-`isc-dhcp-server` es el servicio que permitirá que nuestra máquina José entregue automáticamente direcciones IP a los clientes de la red.
+Por tanto, `isc-dhcp-server` se instala realmente en José, pero hemos realizado la instalación remotamente desde Liza utilizando SSH.
 
 ---
 
-## 5. Indicar la interfaz que utilizará DHCP
+## 5. Indicar la interfaz que utilizará el servidor DHCP
 
-Tenemos que indicarle al servidor DHCP por qué interfaz debe trabajar.
+Seguimos conectados desde Liza al servidor José mediante SSH.
 
-Abrimos el archivo:
+Abrimos:
 
 ```bash
 sudo nano /etc/default/isc-dhcp-server
 ```
 
-Buscamos:
-
-```text
-INTERFACESv4=""
-```
-
-Y lo cambiamos por:
+Configuramos:
 
 ```text
 INTERFACESv4="enp0s3"
-```
-
-También dejamos IPv6 vacío:
-
-```text
 INTERFACESv6=""
 ```
 
-Utilizamos `enp0s3` porque es la interfaz que está conectada a nuestra red interna `red-dhcp`.
+`enp0s3` es la interfaz de José conectada a la red interna `red-dhcp`.
 
 Guardamos:
 
@@ -207,17 +143,17 @@ Ctrl + X
 
 ---
 
-## 6. Configurar la red DHCP
+## 6. Configurar DHCP desde el cliente
 
-Ahora tenemos que indicar qué red y qué direcciones IP puede entregar nuestro servidor.
+Seguimos trabajando desde Liza dentro de José mediante SSH.
 
-Abrimos:
+Abrimos el archivo de configuración:
 
 ```bash
 sudo nano /etc/dhcp/dhcpd.conf
 ```
 
-Al final del archivo añadimos:
+Añadimos:
 
 ```conf
 subnet 172.16.5.0 netmask 255.255.255.0 {
@@ -229,54 +165,13 @@ subnet 172.16.5.0 netmask 255.255.255.0 {
 }
 ```
 
-La línea:
-
-```conf
-subnet 172.16.5.0 netmask 255.255.255.0
-```
-
-indica que vamos a trabajar con la red `172.16.5.0/24`.
-
-La línea:
-
-```conf
-range 172.16.5.151 172.16.5.200;
-```
-
-indica el rango de direcciones que puede entregar DHCP.
-
-Por tanto, podrá asignar direcciones desde:
+Con esta configuración, José podrá entregar direcciones IP del rango:
 
 ```text
-172.16.5.151
+172.16.5.151 - 172.16.5.200
 ```
 
-hasta:
-
-```text
-172.16.5.200
-```
-
-La línea:
-
-```conf
-option routers 172.16.5.150;
-```
-
-indica la dirección configurada como router para los clientes.
-
-Los servidores DNS utilizados son:
-
-```conf
-option domain-name-servers 8.8.8.8, 8.8.4.4;
-```
-
-También configuramos el tiempo de las concesiones DHCP:
-
-```conf
-default-lease-time 600;
-max-lease-time 7200;
-```
+a los clientes de la red.
 
 Guardamos:
 
@@ -288,199 +183,23 @@ Ctrl + X
 
 ---
 
-## 7. Comprobar que la configuración DHCP no tiene errores
+## 7. Comprobar la configuración desde el cliente
 
-Antes de iniciar el servicio comprobamos que el archivo de configuración esté bien escrito.
-
-Ejecutamos:
+Como seguimos dentro del servidor mediante SSH, comprobamos que la configuración no tenga errores:
 
 ```bash
 sudo dhcpd -t -cf /etc/dhcp/dhcpd.conf
 ```
 
-Si el comando termina y vuelve al terminal sin mostrar ningún error, significa que la configuración es correcta.
+Si no aparecen errores, la configuración es correcta.
 
----
-
-## 8. Reiniciar el servidor DHCP
-
-Después de modificar la configuración reiniciamos el servicio:
+Reiniciamos DHCP:
 
 ```bash
 sudo systemctl restart isc-dhcp-server
 ```
 
-Comprobamos su estado:
-
-```bash
-sudo systemctl status isc-dhcp-server
-```
-
-Si aparece:
-
-```text
-Active: active (running)
-```
-
-significa que el servidor DHCP está funcionando correctamente.
-
-Para salir de esta pantalla pulsamos:
-
-```text
-q
-```
-
----
-
-## 9. Configurar el cliente para utilizar DHCP
-
-En la máquina cliente Liza configuramos el Adaptador 1 como:
-
-```text
-Red interna → red-dhcp
-```
-
-La configuración IPv4 del cliente debe estar en automático para que pueda solicitar una dirección al servidor DHCP.
-
-Después comprobamos las direcciones del cliente:
-
-```bash
-ip a
-```
-
-Una dirección obtenida mediante DHCP aparece como `dynamic`.
-
-Por ejemplo:
-
-```text
-inet 172.16.5.152/24 ... dynamic
-```
-
-Esto significa que el servidor José ha entregado automáticamente esa dirección al cliente.
-
----
-
-## 10. Comprobar la comunicación entre cliente y servidor
-
-Desde la máquina cliente comprobamos si podemos comunicarnos con José.
-
-Ejecutamos:
-
-```bash
-ping -c 4 172.16.5.150
-```
-
-En nuestra prueba obtuvimos:
-
-```text
-4 packets transmitted, 4 received, 0% packet loss
-```
-
-Esto significa que el cliente puede comunicarse correctamente con el servidor.
-
-También podemos utilizar:
-
-```bash
-ping 172.16.5.150
-```
-
-Para detener el ping pulsamos:
-
-```text
-Ctrl + C
-```
-
----
-
-## 11. Comprobar el acceso SSH
-
-Desde la máquina cliente Liza nos conectamos al servidor José mediante SSH.
-
-Ejecutamos:
-
-```bash
-ssh jose@172.16.5.150
-```
-
-Antes de conectarnos estamos en:
-
-```text
-liza@liza-VirtualBox:~$
-```
-
-Cuando la conexión se realiza correctamente pasamos a:
-
-```text
-jose@jose-VirtualBox:~$
-```
-
-Esto significa que hemos accedido remotamente desde el cliente al servidor.
-
-Como anteriormente configuramos las claves SSH, podemos entrar sin tener que escribir la contraseña del usuario José.
-
-Para salir del servidor:
-
-```bash
-exit
-```
-
----
-
-## 12. Comprobar el acceso a Internet
-
-Para que el cliente pueda utilizar la red interna y también tener Internet añadimos un segundo adaptador en VirtualBox.
-
-La configuración del cliente queda:
-
-```text
-Adaptador 1 → Red interna → red-dhcp
-Adaptador 2 → NAT
-```
-
-Podemos comprobar las interfaces con:
-
-```bash
-ip a
-```
-
-La interfaz de la red interna tendrá una dirección `172.16.5.x`.
-
-La interfaz NAT tendrá una dirección parecida a:
-
-```text
-10.0.3.x
-```
-
-Para comprobar la conexión a Internet podemos ejecutar:
-
-```bash
-ping -c 4 8.8.8.8
-```
-
-También comprobamos que funciona la resolución de nombres:
-
-```bash
-ping -c 4 google.com
-```
-
----
-
-## 13. Comprobar el resultado final
-
-En el servidor José comprobamos las direcciones:
-
-```bash
-ip a
-```
-
-La configuración final del servidor es:
-
-```text
-enp0s3 → 172.16.5.150/24 → Red interna
-enp0s8 → 10.0.3.x        → NAT
-```
-
-Comprobamos también el servidor DHCP:
+Y comprobamos su estado:
 
 ```bash
 sudo systemctl status isc-dhcp-server
@@ -492,62 +211,107 @@ Debe aparecer:
 Active: active (running)
 ```
 
-En el cliente Liza comprobamos:
+Esto confirma que el servidor DHCP de José está funcionando.
+
+Para salir de la pantalla de estado:
+
+```text
+q
+```
+
+---
+
+## 8. Salir del servidor y volver al cliente
+
+Cuando terminamos la configuración escribimos:
+
+```bash
+exit
+```
+
+Antes estábamos dentro del servidor:
+
+```text
+jose@jose-VirtualBox:~$
+```
+
+Después de ejecutar `exit` volvemos a:
+
+```text
+liza@liza-VirtualBox:~$
+```
+
+Esto significa que hemos cerrado la sesión SSH y estamos otra vez trabajando directamente sobre el cliente.
+
+---
+
+## 9. Configurar Liza como cliente DHCP
+
+Ahora Liza debe obtener automáticamente su dirección IP.
+
+La configuración IPv4 de `enp0s3` debe estar configurada como:
+
+```text
+Automático (DHCP)
+```
+
+Comprobamos la dirección:
 
 ```bash
 ip a
 ```
 
-La dirección obtenida mediante DHCP aparecerá como `dynamic`.
+Una dirección entregada por DHCP aparecerá con la palabra:
 
-Comprobamos la comunicación con el servidor:
-
-```bash
-ping -c 4 172.16.5.150
+```text
+dynamic
 ```
 
-Comprobamos el acceso SSH:
+Por ejemplo:
 
-```bash
-ssh jose@172.16.5.150
+```text
+inet 172.16.5.152/24 ... dynamic
 ```
 
-Y comprobamos Internet:
-
-```bash
-ping -c 4 google.com
-```
+Esto demuestra que Liza ha recibido una dirección IP automáticamente desde el servidor DHCP José.
 
 ---
 
-## Resultado final
+## 10. Funcionamiento completo
 
-Al terminar la práctica tenemos dos máquinas conectadas mediante una red interna de VirtualBox.
-
-El servidor José utiliza la dirección fija:
+El proceso que hemos realizado es:
 
 ```text
+CLIENTE LIZA
+     |
+     | SSH
+     v
+SERVIDOR JOSÉ
 172.16.5.150
-```
-
-y ejecuta el servicio DHCP.
-
-El cliente Liza solicita automáticamente una dirección IP al servidor mediante DHCP.
-
-La comunicación queda de la siguiente forma:
-
-```text
-Servidor José
-172.16.5.150
-      |
-      | Red interna: red-dhcp
-      | DHCP
-      |
-      v
-Cliente Liza
+     |
+     | Instalamos isc-dhcp-server
+     | Configuramos DHCP
+     | Iniciamos DHCP
+     |
+     v
+SERVIDOR DHCP FUNCIONANDO
+     |
+     | asigna una IP
+     v
+CLIENTE LIZA
 172.16.5.x
 ```
 
-También hemos comprobado que existe comunicación entre las máquinas mediante `ping` y que podemos acceder desde Liza al servidor José mediante SSH.
+Por tanto, la instalación del servidor DHCP se ha realizado desde la máquina cliente mediante una conexión SSH.
 
-Con el segundo adaptador NAT, las máquinas también pueden mantener conexión a Internet.
+El paquete:
+
+```text
+isc-dhcp-server
+```
+
+está instalado en José, ya que José es el servidor DHCP.
+
+Liza actúa como cliente DHCP y recibe automáticamente una dirección IP del servidor.
+
+La diferencia es que toda la instalación y configuración de José la hemos realizado remotamente desde la terminal de Liza mediante SSH.
