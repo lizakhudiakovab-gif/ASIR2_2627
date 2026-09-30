@@ -1,14 +1,16 @@
 # Configuración de un servidor DHCP en Ubuntu
 
-En esta práctica configuramos una máquina Ubuntu como servidor DHCP para que pueda asignar automáticamente una dirección IP a otra máquina virtual cliente.
+En esta práctica configuramos una máquina Ubuntu como **servidor DHCP** para que pueda asignar automáticamente una dirección IP a otra máquina virtual que funcionará como cliente.
 
-Nuestra configuración será:
+## Configuración de la red
 
-Servidor José: 172.16.5.150  
-Cliente Liza: 172.16.5.151  
-Red: 172.16.5.0/24
+| Máquina | Función | Dirección IP |
+|---|---|---|
+| José | Servidor DHCP | `172.16.5.150` |
+| Liza | Cliente DHCP | `172.16.5.x` |
+| Red | Red interna | `172.16.5.0/24` |
 
-El servidor tendrá una IP fija y el cliente obtendrá su dirección mediante DHCP.
+El servidor tendrá una dirección IP fija, mientras que el cliente recibirá una dirección automáticamente mediante DHCP.
 
 ---
 
@@ -16,27 +18,44 @@ El servidor tendrá una IP fija y el cliente obtendrá su dirección mediante DH
 
 Con las máquinas virtuales apagadas entramos en:
 
-Configuración > Red
+**Configuración > Red**
 
-En el servidor configuramos:
+### Servidor José
 
-Adaptador 1:
-- Red interna
-- Nombre: red-dhcp
+Configuramos dos adaptadores.
 
-Adaptador 2:
-- NAT
+**Adaptador 1**
 
-El Adaptador 1 se utiliza para comunicar el servidor con el cliente.
+- Conectado a: `Red interna`
+- Nombre: `red-dhcp`
 
-El Adaptador 2 permite que el servidor siga teniendo acceso a Internet.
+Este adaptador se utilizará para la comunicación entre el servidor y el cliente.
 
-En el cliente configuramos el Adaptador 1 como:
+**Adaptador 2**
 
-- Red interna
-- Nombre: red-dhcp
+- Conectado a: `NAT`
 
-Es importante que servidor y cliente tengan exactamente el mismo nombre de red interna.
+Este adaptador permite que el servidor tenga acceso a Internet.
+
+### Cliente Liza
+
+**Adaptador 1**
+
+- Conectado a: `Red interna`
+- Nombre: `red-dhcp`
+- Cable conectado
+
+Es importante que el servidor y el cliente tengan exactamente el mismo nombre de red interna:
+
+```text
+red-dhcp
+```
+
+Si también queremos que el cliente tenga acceso a Internet, podemos añadir:
+
+**Adaptador 2**
+
+- Conectado a: `NAT`
 
 ---
 
@@ -44,170 +63,230 @@ Es importante que servidor y cliente tengan exactamente el mismo nombre de red i
 
 En el servidor ejecutamos:
 
-    ip a
+```bash
+ip a
+```
 
-En nuestro caso tenemos:
+En nuestro caso tenemos dos interfaces principales:
 
-    enp0s3
+```text
+enp0s3 → Red interna
+enp0s8 → NAT
+```
 
-para la red interna y:
+`enp0s3` se utilizará para DHCP y para la comunicación con el cliente.
 
-    enp0s8
-
-para NAT.
+`enp0s8` se utilizará para tener acceso a Internet.
 
 ---
 
 ## 3. Configurar la IP fija del servidor
 
-Abrimos el archivo de Netplan:
+El servidor DHCP debe tener una dirección IP fija.
 
-    sudo nano /etc/netplan/00-installer-config.yaml
+Abrimos el archivo de configuración de Netplan:
 
-Configuramos la red:
+```bash
+sudo nano /etc/netplan/00-installer-config.yaml
+```
 
-    network:
-      version: 2
-      ethernets:
-        enp0s3:
-          dhcp4: false
-          addresses:
-            - 172.16.5.150/24
-        enp0s8:
-          dhcp4: true
+Configuramos:
 
-Explicación:
+```yaml
+network:
+  version: 2
+  ethernets:
+    enp0s3:
+      dhcp4: false
+      addresses:
+        - 172.16.5.150/24
+    enp0s8:
+      dhcp4: true
+```
 
-- enp0s3 es la interfaz de la red interna.
-- dhcp4: false indica que el servidor no recibirá su IP automáticamente.
-- 172.16.5.150/24 es la IP fija del servidor.
-- enp0s8 utiliza DHCP porque corresponde al adaptador NAT.
+### Explicación
 
-Guardamos:
+- `enp0s3` es la interfaz de la red interna.
+- `dhcp4: false` indica que el servidor no obtendrá su IP mediante DHCP.
+- `172.16.5.150/24` es la dirección IP fija del servidor.
+- `enp0s8` corresponde al adaptador NAT.
+- `dhcp4: true` permite que el adaptador NAT obtenga automáticamente su configuración.
 
-    Ctrl + O
-    Enter
-    Ctrl + X
+Guardamos el archivo:
+
+```text
+Ctrl + O
+Enter
+Ctrl + X
+```
 
 Aplicamos los cambios:
 
-    sudo netplan apply
+```bash
+sudo netplan apply
+```
 
 Comprobamos:
 
-    ip a
+```bash
+ip a
+```
 
-En enp0s3 debe aparecer:
+En `enp0s3` debe aparecer:
 
-    172.16.5.150/24
+```text
+inet 172.16.5.150/24
+```
 
 ---
 
 ## 4. Instalar el servidor DHCP
 
-Actualizamos los repositorios:
+Primero actualizamos los repositorios:
 
-    sudo apt update
+```bash
+sudo apt update
+```
 
 Instalamos el servidor DHCP:
 
-    sudo apt install isc-dhcp-server -y
+```bash
+sudo apt install isc-dhcp-server -y
+```
 
-El paquete isc-dhcp-server permite que Ubuntu actúe como servidor DHCP y entregue direcciones IP automáticamente a otros equipos.
+El paquete `isc-dhcp-server` permite que Ubuntu actúe como servidor DHCP y entregue direcciones IP automáticamente a los clientes de la red.
 
 ---
 
 ## 5. Indicar qué interfaz utilizará DHCP
 
-Abrimos:
+Abrimos el archivo:
 
-    sudo nano /etc/default/isc-dhcp-server
+```bash
+sudo nano /etc/default/isc-dhcp-server
+```
 
 Buscamos:
 
-    INTERFACESv4=""
+```text
+INTERFACESv4=""
+```
 
 Y lo cambiamos por:
 
-    INTERFACESv4="enp0s3"
+```text
+INTERFACESv4="enp0s3"
+```
 
 Dejamos IPv6 vacío:
 
-    INTERFACESv6=""
+```text
+INTERFACESv6=""
+```
 
-De esta forma DHCP solamente trabajará mediante nuestra red interna enp0s3.
+De esta forma, el servidor DHCP trabajará mediante la interfaz `enp0s3`, que corresponde a nuestra red interna.
 
 Guardamos:
 
-    Ctrl + O
-    Enter
-    Ctrl + X
+```text
+Ctrl + O
+Enter
+Ctrl + X
+```
 
 ---
 
-## 6. Configurar la red que utilizará DHCP
+## 6. Configurar el servidor DHCP
 
-Abrimos:
+Abrimos el archivo principal de configuración:
 
-    sudo nano /etc/dhcp/dhcpd.conf
+```bash
+sudo nano /etc/dhcp/dhcpd.conf
+```
 
-Al final del archivo añadimos la configuración de nuestra red.
+Al final del archivo añadimos:
 
-Para trabajar con nuestra red 172.16.5.0/24 podemos utilizar:
+```conf
+subnet 172.16.5.0 netmask 255.255.255.0 {
+    range 172.16.5.151 172.16.5.200;
+    option routers 172.16.5.150;
+    option domain-name-servers 8.8.8.8, 8.8.4.4;
+    default-lease-time 600;
+    max-lease-time 7200;
+}
+```
 
-    subnet 172.16.5.0 netmask 255.255.255.0 {
-        range 172.16.5.151 172.16.5.200;
-        option routers 172.16.5.150;
-        option domain-name-servers 8.8.8.8, 8.8.4.4;
-        default-lease-time 600;
-        max-lease-time 7200;
-    }
+### Explicación de la configuración
 
-Explicación:
+#### Red
 
-    subnet 172.16.5.0
+```conf
+subnet 172.16.5.0 netmask 255.255.255.0
+```
 
-Indica la red que estamos configurando.
+Indica que estamos configurando la red:
 
-    netmask 255.255.255.0
+```text
+172.16.5.0/24
+```
 
-Es la máscara correspondiente a /24.
+#### Rango DHCP
 
-    range 172.16.5.151 172.16.5.200
+```conf
+range 172.16.5.151 172.16.5.200;
+```
 
-Es el rango de direcciones que DHCP puede entregar a los clientes.
+Son las direcciones IP que el servidor DHCP puede entregar automáticamente a los clientes.
 
-    option routers 172.16.5.150
+#### Router
 
-Indica la dirección configurada como router para los clientes.
+```conf
+option routers 172.16.5.150;
+```
 
-    option domain-name-servers 8.8.8.8, 8.8.4.4
+Indica la dirección configurada como puerta de enlace para los clientes.
 
-Indica los servidores DNS.
+#### DNS
 
-    default-lease-time 600
+```conf
+option domain-name-servers 8.8.8.8, 8.8.4.4;
+```
 
-El tiempo normal de concesión de una IP será de 600 segundos.
+Indica los servidores DNS que recibirán los clientes.
 
-    max-lease-time 7200
+#### Tiempo de concesión
 
-Es el tiempo máximo que puede durar una concesión.
+```conf
+default-lease-time 600;
+```
+
+La concesión normal de una dirección IP será de 600 segundos.
+
+```conf
+max-lease-time 7200;
+```
+
+Indica el tiempo máximo que puede durar una concesión.
 
 Guardamos:
 
-    Ctrl + O
-    Enter
-    Ctrl + X
+```text
+Ctrl + O
+Enter
+Ctrl + X
+```
 
 ---
 
 ## 7. Comprobar la configuración DHCP
 
-Antes de iniciar el servidor comprobamos que no haya errores:
+Antes de iniciar el servicio comprobamos que el archivo no tenga errores:
 
-    sudo dhcpd -t -cf /etc/dhcp/dhcpd.conf
+```bash
+sudo dhcpd -t -cf /etc/dhcp/dhcpd.conf
+```
 
-Si vuelve al terminal sin mostrar errores, la sintaxis es correcta.
+Si el comando termina y vuelve al terminal sin mostrar errores, significa que la sintaxis de la configuración es correcta.
 
 ---
 
@@ -215,80 +294,221 @@ Si vuelve al terminal sin mostrar errores, la sintaxis es correcta.
 
 Reiniciamos el servicio:
 
-    sudo systemctl restart isc-dhcp-server
+```bash
+sudo systemctl restart isc-dhcp-server
+```
 
 Comprobamos su estado:
 
-    sudo systemctl status isc-dhcp-server
+```bash
+sudo systemctl status isc-dhcp-server
+```
 
 Si aparece:
 
-    Active: active (running)
+```text
+Active: active (running)
+```
 
 significa que el servidor DHCP está funcionando correctamente.
 
-Para salir de la pantalla de estado pulsamos:
+Para salir de la pantalla de estado:
 
-    q
+```text
+q
+```
 
 ---
 
 ## 9. Configurar el cliente
 
-En VirtualBox configuramos la máquina cliente con:
+En VirtualBox configuramos el cliente con:
 
-Adaptador 1:
-- Red interna
-- Nombre: red-dhcp
-- Cable conectado
+```text
+Adaptador 1
+Red interna
+Nombre: red-dhcp
+Cable conectado
+```
 
-Después iniciamos Ubuntu cliente.
+Después iniciamos Ubuntu.
 
-La configuración IPv4 del cliente debe estar en automático (DHCP).
+La configuración IPv4 del cliente debe estar en:
 
-Comprobamos su dirección:
+```text
+Automático (DHCP)
+```
 
-    ip a
+Comprobamos las direcciones IP:
 
-El cliente debería recibir automáticamente una dirección del rango configurado.
+```bash
+ip a
+```
+
+El cliente debería recibir automáticamente una dirección del rango:
+
+```text
+172.16.5.151 - 172.16.5.200
+```
 
 Por ejemplo:
 
-    172.16.5.151/24
+```text
+inet 172.16.5.152/24 ... dynamic
+```
 
-Si junto a la dirección aparece "dynamic", significa que la dirección ha sido obtenida mediante DHCP.
+La palabra:
 
----
+```text
+dynamic
+```
 
-## 10. Comprobar la comunicación
-
-Desde el cliente podemos comprobar que existe comunicación con el servidor:
-
-    ping 172.16.5.150
-
-Y desde el servidor podemos comprobar la comunicación con el cliente:
-
-    ping 172.16.5.151
-
-Para detener ping:
-
-    Ctrl + C
+indica que esa dirección ha sido obtenida automáticamente mediante DHCP.
 
 ---
 
-## Resultado final
+## 10. Comprobar la conectividad
 
-La estructura de nuestra red queda:
+Desde el cliente comprobamos que podemos comunicarnos con el servidor:
 
-    SERVIDOR JOSÉ
-    172.16.5.150
-          |
-          | DHCP
-          |
-          v
-    CLIENTE LIZA
-    172.16.5.151
+```bash
+ping -c 4 172.16.5.150
+```
 
-El servidor tiene una dirección IP fija y ejecuta el servicio DHCP.
+Si obtenemos respuestas como:
 
-El cliente está configurado para obtener automáticamente su dirección IP desde el servidor DHCP.
+```text
+64 bytes from 172.16.5.150
+```
+
+significa que existe comunicación entre las dos máquinas.
+
+Al terminar podemos ver:
+
+```text
+4 packets transmitted, 4 received, 0% packet loss
+```
+
+Esto indica que la comunicación funciona correctamente.
+
+También podemos utilizar:
+
+```bash
+ping 172.16.5.150
+```
+
+y detenerlo manualmente con:
+
+```text
+Ctrl + C
+```
+
+---
+
+## 11. Comprobar SSH entre cliente y servidor
+
+Desde el cliente Liza nos conectamos al servidor José:
+
+```bash
+ssh jose@172.16.5.150
+```
+
+Si la conexión funciona, el terminal cambia de:
+
+```text
+liza@liza-VirtualBox:~$
+```
+
+a:
+
+```text
+jose@jose-VirtualBox:~$
+```
+
+Esto significa que estamos dentro del servidor José mediante SSH.
+
+En nuestro caso también configuramos autenticación mediante claves SSH, por lo que podemos entrar sin escribir la contraseña del servidor.
+
+Para cerrar la conexión SSH:
+
+```bash
+exit
+```
+
+---
+
+## 12. Comprobar Internet en el cliente
+
+Si hemos añadido un segundo adaptador NAT al cliente, podemos comprobarlo con:
+
+```bash
+ip a
+```
+
+La configuración será parecida a:
+
+```text
+enp0s3 → 172.16.5.x → Red interna
+enp0s8 → 10.0.3.x   → NAT
+```
+
+Primero comprobamos la salida a Internet:
+
+```bash
+ping -c 4 8.8.8.8
+```
+
+Después comprobamos también la resolución DNS:
+
+```bash
+ping -c 4 google.com
+```
+
+Si ambos comandos responden correctamente, el cliente tiene conexión a Internet.
+
+---
+
+# Resultado final
+
+La estructura de nuestra red queda de la siguiente forma:
+
+```text
+                    SERVIDOR JOSÉ
+                    172.16.5.150
+                         |
+                         |
+                    Red interna
+                     red-dhcp
+                         |
+                   DHCP + SSH
+                         |
+                         v
+                    CLIENTE LIZA
+                    172.16.5.x
+```
+
+Además, ambas máquinas pueden utilizar un segundo adaptador NAT para acceder a Internet:
+
+```text
+JOSÉ
+enp0s3 → 172.16.5.150 → Red interna
+enp0s8 → 10.0.3.x     → NAT
+
+LIZA
+enp0s3 → 172.16.5.x   → Red interna / DHCP
+enp0s8 → 10.0.3.x     → NAT
+```
+
+## Comprobaciones finales
+
+| Comprobación | Resultado |
+|---|---|
+| IP fija del servidor | `172.16.5.150/24` |
+| Servidor DHCP | `active (running)` |
+| Cliente recibe IP por DHCP | Dirección `172.16.5.x` con `dynamic` |
+| Comunicación cliente-servidor | `ping` responde |
+| SSH cliente-servidor | Funciona |
+| SSH mediante claves | Acceso sin contraseña |
+| Internet mediante NAT | Funciona |
+
+Con esta configuración, el servidor José proporciona direcciones IP mediante DHCP a los equipos de la red interna y el cliente Liza puede comunicarse con el servidor mediante la red `172.16.5.0/24`.
