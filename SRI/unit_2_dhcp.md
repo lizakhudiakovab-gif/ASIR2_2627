@@ -1,4 +1,4 @@
-# Configuración de DHCP desde la máquina cliente
+# Configuración de DHCP desde la máquina cliente Ubuntu
 
 En esta práctica utilizamos dos máquinas virtuales Ubuntu:
 
@@ -699,3 +699,610 @@ Hemos comprobado que:
 10. La instalación y configuración de DHCP en José se ha realizado remotamente desde Liza mediante SSH.
 
 Por tanto, tenemos comunicación entre las dos máquinas, acceso remoto mediante SSH y el servicio DHCP configurado y funcionando en el servidor José.
+
+
+#Parte 2: Configuración de un servidor DHCP en Windows Server
+
+En esta práctica configuramos **Windows Server como servidor DHCP** para que pueda asignar automáticamente direcciones IP a los equipos clientes que se encuentren en la misma red interna.
+
+La configuración utilizada es:
+
+```text
+Red:                172.16.5.0/24
+Windows Server:     172.16.5.159
+Rango DHCP:         172.16.5.150 - 172.16.5.200
+Máscara:            255.255.255.0
+DNS:                8.8.8.8 y 8.8.4.4
+```
+
+El cliente Ubuntu Liza tiene inicialmente la IP fija:
+
+```text
+172.16.5.151/24
+```
+
+Al final comprobaremos que puede mantener esta IP fija y solicitar además una dirección IP dinámica al servidor DHCP.
+
+---
+
+## 1. Configurar la red de VirtualBox
+
+Para que el servidor DHCP y los clientes puedan comunicarse, las máquinas virtuales tienen que estar conectadas a la **misma Red interna de VirtualBox**.
+
+Por ejemplo:
+
+```text
+Red interna: red-dhcp
+```
+
+Por tanto, Windows Server y los clientes Ubuntu deben utilizar la misma red interna.
+
+Esto permite que los mensajes DHCP enviados por los clientes puedan llegar al Windows Server.
+
+---
+
+## 2. Configurar una IP fija en Windows Server
+
+Un servidor DHCP debe tener una dirección IP fija para que su dirección no cambie.
+
+En nuestro caso configuramos:
+
+```text
+IP:       172.16.5.159
+Máscara:  255.255.255.0
+DNS:      8.8.8.8
+          8.8.4.4
+```
+
+Podemos comprobar la configuración desde PowerShell con:
+
+```powershell
+ipconfig /all
+```
+
+Debe aparecer la dirección:
+
+```text
+Dirección IPv4: 172.16.5.159
+```
+
+y DHCP debe aparecer deshabilitado en la propia interfaz del servidor, ya que el servidor utiliza una IP configurada manualmente.
+
+---
+
+# 3. Instalar el rol de servidor DHCP
+
+Abrimos:
+
+```text
+Administrador del servidor
+```
+
+Seleccionamos:
+
+```text
+Agregar roles y características
+```
+
+En **Tipo de instalación** seleccionamos:
+
+```text
+Instalación basada en características o en roles
+```
+
+Seleccionamos nuestro Windows Server como servidor de destino.
+
+En **Roles de servidor** marcamos:
+
+```text
+Servidor DHCP
+```
+
+Aceptamos también las herramientas adicionales que Windows necesite instalar.
+
+Continuamos con:
+
+```text
+Siguiente → Siguiente → Instalar
+```
+
+Esperamos hasta que finalice la instalación.
+
+---
+
+# 4. Completar la configuración de DHCP
+
+Después de instalar el rol aparece la opción:
+
+```text
+Completar configuración de DHCP
+```
+
+La seleccionamos.
+
+Windows crea los grupos necesarios para administrar DHCP, entre ellos:
+
+```text
+Administradores de DHCP
+Usuarios de DHCP
+```
+
+Pulsamos:
+
+```text
+Confirmar
+```
+
+Cuando aparezca:
+
+```text
+Creando grupos de seguridad → Listo
+```
+
+podemos cerrar el asistente.
+
+---
+
+# 5. Comprobar que el servicio DHCP está funcionando
+
+Abrimos PowerShell como administrador y ejecutamos:
+
+```powershell
+Get-Service DHCPServer
+```
+
+El resultado debe mostrar:
+
+```text
+Status    Name
+------    ----
+Running   DHCPServer
+```
+
+`Running` significa que el servicio DHCP está ejecutándose correctamente.
+
+---
+
+# 6. Abrir la consola DHCP
+
+Desde el Administrador del servidor entramos en:
+
+```text
+Herramientas → DHCP
+```
+
+Desplegamos:
+
+```text
+DHCP
+ └── Servidor
+      └── IPv4
+```
+
+Sobre **IPv4** creamos un:
+
+```text
+Ámbito nuevo
+```
+
+Un ámbito determina qué direcciones IP puede entregar nuestro servidor DHCP.
+
+---
+
+# 7. Crear el ámbito DHCP
+
+Le damos un nombre al ámbito.
+
+En nuestro caso:
+
+```text
+Red DHCP
+```
+
+Después configuramos el intervalo de direcciones.
+
+Utilizamos:
+
+```text
+Dirección IP inicial: 172.16.5.150
+Dirección IP final:   172.16.5.200
+Longitud:             24
+Máscara:              255.255.255.0
+```
+
+Por tanto, nuestro servidor DHCP trabajará con el rango:
+
+```text
+172.16.5.150 - 172.16.5.200
+```
+
+---
+
+# 8. Configurar exclusiones
+
+Una **exclusión** sirve para indicar al DHCP que determinadas direcciones del rango no deben entregarse automáticamente.
+
+En nuestra práctica añadimos como exclusión:
+
+```text
+172.16.5.159
+```
+
+Esta dirección pertenece al propio Windows Server, por lo que no queremos que DHCP se la entregue a otro equipo.
+
+La exclusión queda:
+
+```text
+172.16.5.159 - 172.16.5.159
+```
+
+De esta forma evitamos un conflicto de direcciones IP.
+
+---
+
+# 9. Configurar la duración de la concesión
+
+Después aparece la duración de la concesión.
+
+Dejamos el valor predeterminado:
+
+```text
+8 días
+```
+
+Una concesión indica durante cuánto tiempo un cliente puede utilizar una dirección IP que le ha proporcionado el servidor DHCP.
+
+---
+
+# 10. Configurar las opciones DHCP
+
+Seleccionamos:
+
+```text
+Configurar estas opciones ahora
+```
+
+## Puerta de enlace
+
+En nuestra práctica utilizamos:
+
+```text
+172.16.0.1
+```
+
+La añadimos en el apartado:
+
+```text
+Enrutador (puerta de enlace predeterminada)
+```
+
+## Servidores DNS
+
+Configuramos:
+
+```text
+8.8.8.8
+8.8.4.4
+```
+
+El dominio primario se puede dejar vacío si no estamos utilizando uno.
+
+## Servidores WINS
+
+No necesitamos WINS para esta práctica, por lo que dejamos esta pantalla vacía y continuamos.
+
+---
+
+# 11. Activar el ámbito
+
+Finalizamos el asistente y activamos el ámbito.
+
+Podemos comprobar su estado desde PowerShell:
+
+```powershell
+Get-DhcpServerv4Scope
+```
+
+En nuestro caso obtuvimos:
+
+```text
+ScopeId       172.16.5.0
+SubnetMask    255.255.255.0
+Name          Red DHCP
+State         Active
+StartRange    172.16.5.150
+EndRange      172.16.5.200
+```
+
+Lo más importante es:
+
+```text
+State: Active
+```
+
+Esto significa que el ámbito está activo y puede entregar direcciones IP.
+
+---
+
+# 12. Comprobar conectividad con el cliente
+
+Antes de probar DHCP comprobamos que Windows Server puede comunicarse con Ubuntu Liza.
+
+Liza tiene inicialmente:
+
+```text
+172.16.5.151
+```
+
+Desde Windows Server ejecutamos:
+
+```powershell
+ping 172.16.5.151
+```
+
+Obtuvimos:
+
+```text
+Enviados = 4
+Recibidos = 4
+Perdidos = 0
+```
+
+Esto demuestra que Windows Server y Ubuntu Liza pueden comunicarse correctamente a través de la red interna.
+
+---
+
+# 13. Configuración fija del cliente Ubuntu
+
+El cliente Liza mantiene su configuración fija en Netplan.
+
+El archivo utilizado es:
+
+```bash
+/etc/netplan/00-installer-config.yaml
+```
+
+Podemos abrirlo con:
+
+```bash
+sudo nano /etc/netplan/00-installer-config.yaml
+```
+
+La configuración fija es:
+
+```yaml
+network:
+  version: 2
+  renderer: networkd
+  ethernets:
+    enp0s3:
+      dhcp4: false
+      addresses:
+        - 172.16.5.151/24
+      routes:
+        - to: default
+          via: 172.16.0.1
+          on-link: true
+```
+
+Aplicamos los cambios con:
+
+```bash
+sudo netplan apply
+```
+
+Si ejecutamos:
+
+```bash
+ip -4 addr show enp0s3
+```
+
+aparece:
+
+```text
+inet 172.16.5.151/24
+valid_lft forever
+preferred_lft forever
+```
+
+`forever` indica que esta dirección pertenece a la configuración fija y no tiene el tiempo de concesión propio de una dirección obtenida mediante DHCP.
+
+---
+
+# 14. Instalar el cliente DHCP en Ubuntu
+
+Para solicitar manualmente otra dirección IP al servidor DHCP utilizamos `dhclient`.
+
+Si el comando no está instalado:
+
+```bash
+sudo apt update
+```
+
+Después:
+
+```bash
+sudo apt install isc-dhcp-client -y
+```
+
+Esto instala el cliente DHCP necesario para realizar la solicitud.
+
+---
+
+# 15. Solicitar una IP al Windows Server
+
+Sin eliminar nuestra dirección fija `172.16.5.151`, ejecutamos:
+
+```bash
+sudo dhclient enp0s3
+```
+
+`dhclient` envía una solicitud DHCP a través de la interfaz:
+
+```text
+enp0s3
+```
+
+El Windows Server recibe la solicitud y busca una dirección disponible dentro de su ámbito:
+
+```text
+172.16.5.150 - 172.16.5.200
+```
+
+En nuestro caso Windows Server asignó:
+
+```text
+172.16.5.152
+```
+
+---
+
+# 16. Comprobar la IP recibida por DHCP
+
+En Ubuntu ejecutamos:
+
+```bash
+ip -4 addr show enp0s3
+```
+
+El resultado final fue:
+
+```text
+inet 172.16.5.151/24 ... enp0s3
+    valid_lft forever
+    preferred_lft forever
+
+inet 172.16.5.152/24 ... secondary dynamic enp0s3
+    valid_lft ...
+    preferred_lft ...
+```
+
+Ahora la interfaz tiene **dos direcciones IP**.
+
+### IP fija
+
+```text
+172.16.5.151
+```
+
+Es nuestra dirección configurada manualmente.
+
+Por eso aparece:
+
+```text
+valid_lft forever
+```
+
+### IP dinámica
+
+```text
+172.16.5.152
+```
+
+Es la dirección que ha entregado automáticamente el Windows Server.
+
+Aparece:
+
+```text
+secondary dynamic
+```
+
+La palabra:
+
+```text
+dynamic
+```
+
+es especialmente importante porque demuestra que esa dirección se ha obtenido dinámicamente y no se ha configurado manualmente.
+
+---
+
+# 17. Comprobar la concesión desde Windows Server
+
+También podemos comprobar desde el propio servidor que ha entregado la dirección.
+
+Entramos en:
+
+```text
+DHCP
+ └── IPv4
+      └── Ámbito [172.16.5.0] Red DHCP
+           └── Concesiones de direcciones
+```
+
+En **Concesiones de direcciones** aparece:
+
+```text
+172.16.5.152
+```
+
+Esto confirma desde el lado del servidor que Windows Server ha concedido esa dirección al cliente.
+
+---
+
+# 18. Funcionamiento final
+
+El funcionamiento completo queda así:
+
+```text
+WINDOWS SERVER
+IP: 172.16.5.159
+Servidor DHCP
+Rango: 172.16.5.150 - 172.16.5.200
+        |
+        |
+        | DHCP
+        v
+UBUNTU LIZA
+enp0s3
+        |
+        ├── 172.16.5.151 → IP fija
+        |
+        └── 172.16.5.152 → IP dinámica recibida por DHCP
+```
+
+Por tanto, al final de la práctica podemos demostrar dos cosas:
+
+1. El cliente mantiene su dirección fija:
+
+```text
+172.16.5.151
+```
+
+2. Al ejecutar:
+
+```bash
+sudo dhclient enp0s3
+```
+
+el cliente solicita una dirección al servidor DHCP y Windows Server le entrega una dirección disponible dentro del rango configurado.
+
+En nuestro caso:
+
+```text
+172.16.5.152
+```
+
+La comprobación final en Ubuntu es:
+
+```bash
+ip -4 addr show enp0s3
+```
+
+y debemos encontrar algo parecido a:
+
+```text
+inet 172.16.5.151/24
+inet 172.16.5.152/24 ... secondary dynamic
+```
+
+Mientras que en Windows Server la misma dirección dinámica debe aparecer en:
+
+```text
+IPv4
+→ Ámbito [172.16.5.0] Red DHCP
+→ Concesiones de direcciones
+→ 172.16.5.152
+```
+
+De esta forma queda demostrado que **el servidor DHCP de Windows Server está funcionando y está asignando direcciones IP automáticamente a los clientes dentro del rango que hemos configurado**.
