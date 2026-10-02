@@ -701,7 +701,7 @@ Hemos comprobado que:
 Por tanto, tenemos comunicación entre las dos máquinas, acceso remoto mediante SSH y el servicio DHCP configurado y funcionando en el servidor José.
 
 
-#Parte 2: Configuración de un servidor DHCP en Windows Server
+#Configuración de un servidor DHCP en Windows Server
 
 En esta práctica configuramos **Windows Server como servidor DHCP** para que pueda asignar automáticamente direcciones IP a los equipos clientes que se encuentren en la misma red interna.
 
