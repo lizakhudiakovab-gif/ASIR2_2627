@@ -1303,6 +1303,610 @@ IPv4
 → Ámbito [172.16.5.0] Red DHCP
 → Concesiones de direcciones
 → 172.16.5.152
+
+# Opciones del archivo de configuración DHCP en Ubuntu
+
+El archivo principal de configuración del servidor DHCP en Ubuntu es:
+
+```bash
+/etc/dhcp/dhcpd.conf
+```
+
+Para ver su contenido podemos utilizar:
+
+```bash
+sudo cat /etc/dhcp/dhcpd.conf
+```
+
+También podemos abrirlo para modificarlo con:
+
+```bash
+sudo nano /etc/dhcp/dhcpd.conf
+```
+
+## Comentarios dentro del archivo
+
+Dentro de `dhcpd.conf` aparecen muchas configuraciones de ejemplo.
+
+Las líneas que empiezan por `#` son comentarios y por tanto **no se están ejecutando**.
+
+Por ejemplo:
+
+```conf
+# authoritative;
+```
+
+Está desactivado.
+
+Mientras que:
+
+```conf
+authoritative;
+```
+
+estaría activo.
+
+---
+
+## option domain-name
+
+Sirve para indicar el nombre de dominio que se proporciona a los clientes.
+
+Ejemplo:
+
+```conf
+option domain-name "example.org";
+```
+
+---
+
+## option domain-name-servers
+
+Indica los servidores DNS que van a utilizar los clientes.
+
+Por ejemplo:
+
+```conf
+option domain-name-servers 8.8.8.8, 8.8.4.4;
+```
+
+Cuando un cliente recibe una configuración mediante DHCP también recibe estos DNS.
+
+---
+
+## default-lease-time
+
+Indica cuánto tiempo se presta normalmente una dirección IP a un cliente.
+
+Por ejemplo:
+
+```conf
+default-lease-time 600;
+```
+
+El tiempo se indica en segundos.
+
+En este caso:
+
+```text
+600 segundos = 10 minutos
+```
+
+---
+
+## max-lease-time
+
+Indica el tiempo máximo durante el que un cliente puede tener una dirección IP concedida por DHCP.
+
+Por ejemplo:
+
+```conf
+max-lease-time 7200;
+```
+
+En este caso:
+
+```text
+7200 segundos = 2 horas
+```
+
+---
+
+## ddns-update-style
+
+Controla las actualizaciones de DNS dinámico.
+
+En el archivo aparece:
+
+```conf
+ddns-update-style none;
+```
+
+`none` significa que el servidor DHCP no realizará actualizaciones dinámicas de DNS.
+
+---
+
+## authoritative
+
+Sirve para indicar que este servidor DHCP es el servidor autorizado para esa red.
+
+```conf
+authoritative;
+```
+
+Esto permite que el servidor responda como servidor DHCP principal de la red.
+
+En nuestro archivo aparece comentado:
+
+```conf
+#authoritative;
+```
+
+Por tanto no está activo.
+
+---
+
+## log-facility
+
+Permite indicar dónde se registran los mensajes generados por el servidor DHCP.
+
+Ejemplo:
+
+```conf
+log-facility local7;
+```
+
+Puede servir para separar los registros de DHCP de otros mensajes del sistema.
+
+---
+
+# Configuración de una subred
+
+## subnet
+
+`subnet` sirve para indicar qué red va a gestionar nuestro servidor DHCP.
+
+La estructura es:
+
+```conf
+subnet RED netmask MASCARA {
+    ...
+}
+```
+
+En nuestra configuración tenemos:
+
+```conf
+subnet 172.16.5.0 netmask 255.255.255.0 {
+```
+
+Esto significa que estamos configurando DHCP para:
+
+```text
+Red: 172.16.5.0
+Máscara: 255.255.255.0
+Prefijo: /24
+```
+
+Todo lo que aparece entre `{` y `}` pertenece a la configuración de esa subred.
+
+---
+
+## range
+
+Indica el rango de direcciones IP que el servidor DHCP puede entregar automáticamente.
+
+En nuestra configuración:
+
+```conf
+range 172.16.5.151 172.16.5.200;
+```
+
+Por tanto DHCP puede entregar direcciones desde:
+
+```text
+172.16.5.151
+```
+
+hasta:
+
+```text
+172.16.5.200
+```
+
+Cuando un cliente solicita una IP el servidor busca una dirección disponible dentro de este rango.
+
+---
+
+## option routers
+
+Indica la puerta de enlace que el servidor DHCP proporciona a los clientes.
+
+En nuestra configuración:
+
+```conf
+option routers 172.16.5.150;
+```
+
+Los clientes que reciban la configuración DHCP recibirán `172.16.5.150` como puerta de enlace.
+
+---
+
+## option broadcast-address
+
+Permite indicar la dirección broadcast de la red.
+
+Por ejemplo:
+
+```conf
+option broadcast-address 10.5.5.31;
+```
+
+El broadcast se utiliza para enviar información a todos los dispositivos de una red.
+
+---
+
+## option subnet-mask
+
+Permite indicar la máscara de subred que recibirán los clientes.
+
+Por ejemplo:
+
+```conf
+option subnet-mask 255.255.255.0;
+```
+
+---
+
+# BOOTP
+
+## range dynamic-bootp
+
+Permite definir un rango de direcciones para clientes que utilizan BOOTP.
+
+Ejemplo:
+
+```conf
+range dynamic-bootp 10.254.239.40 10.254.239.60;
+```
+
+BOOTP es un protocolo anterior a DHCP y actualmente se utiliza mucho menos.
+
+---
+
+# Reservar una IP para un dispositivo
+
+También podemos configurar DHCP para que un dispositivo concreto reciba siempre la misma dirección IP.
+
+Para hacerlo se utilizan principalmente:
+
+```text
+host
+hardware ethernet
+fixed-address
+```
+
+## host
+
+Sirve para crear una configuración específica para un equipo.
+
+Ejemplo:
+
+```conf
+host liza {
+}
+```
+
+Dentro ponemos las opciones específicas de ese dispositivo.
+
+---
+
+## hardware ethernet
+
+Indica la dirección MAC del dispositivo.
+
+Ejemplo:
+
+```conf
+hardware ethernet 08:00:27:98:c5:41;
+```
+
+La MAC identifica la tarjeta de red del cliente.
+
+---
+
+## fixed-address
+
+Permite indicar qué dirección IP queremos entregar siempre a ese dispositivo.
+
+Ejemplo:
+
+```conf
+fixed-address 172.16.5.151;
+```
+
+Podríamos juntar las tres opciones:
+
+```conf
+host liza {
+    hardware ethernet 08:00:27:98:c5:41;
+    fixed-address 172.16.5.151;
+}
+```
+
+Cuando el dispositivo con esa MAC solicite una dirección DHCP el servidor lo reconocerá y le entregará la IP indicada.
+
+Esto se conoce como **reserva DHCP**.
+
+---
+
+# Opciones relacionadas con el arranque por red
+
+## filename
+
+Indica el archivo que un cliente puede utilizar durante un arranque por red.
+
+Ejemplo:
+
+```conf
+filename "vmunix.passacaglia";
+```
+
+---
+
+## server-name
+
+Permite indicar el nombre del servidor relacionado con el arranque por red.
+
+Ejemplo:
+
+```conf
+server-name "toccata.example.com";
+```
+
+Estas opciones pueden utilizarse en configuraciones de arranque por red.
+
+---
+
+# Clases de clientes
+
+## class
+
+Permite crear una clase o grupo de clientes.
+
+Ejemplo:
+
+```conf
+class "foo" {
+}
+```
+
+Después podemos aplicar configuraciones diferentes dependiendo del grupo al que pertenezca un cliente.
+
+---
+
+## match
+
+Permite establecer la condición que tiene que cumplir un cliente para pertenecer a una clase.
+
+Por ejemplo:
+
+```conf
+match if substring(option vendor-class-identifier, 0, 4) = "SUNW";
+```
+
+De esta forma DHCP puede distinguir diferentes tipos de clientes y tratarlos de forma diferente.
+
+---
+
+# Redes compartidas
+
+## shared-network
+
+Permite agrupar varias subredes que comparten la misma red física.
+
+Ejemplo:
+
+```conf
+shared-network ejemplo {
+    subnet ... {
+    }
+
+    subnet ... {
+    }
+}
+```
+
+Dentro podemos configurar varias subredes.
+
+---
+
+# Pools de direcciones
+
+## pool
+
+Un `pool` permite crear un grupo de direcciones IP y aplicar determinadas reglas solamente a ese grupo.
+
+Ejemplo:
+
+```conf
+pool {
+    range 10.17.224.10 10.17.224.250;
+}
+```
+
+---
+
+## allow members of
+
+Permite que determinados clientes puedan utilizar un pool.
+
+Ejemplo:
+
+```conf
+allow members of "foo";
+```
+
+En este caso solamente los clientes pertenecientes a la clase `foo` podrían utilizar ese grupo de direcciones.
+
+---
+
+## deny members of
+
+Hace lo contrario. Impide que determinados clientes puedan utilizar un pool.
+
+Ejemplo:
+
+```conf
+deny members of "foo";
+```
+
+---
+
+# Nuestra configuración DHCP
+
+La parte que hemos configurado nosotros al final del archivo es:
+
+```conf
+subnet 172.16.5.0 netmask 255.255.255.0 {
+    range 172.16.5.151 172.16.5.200;
+    option routers 172.16.5.150;
+    option domain-name-servers 8.8.8.8, 8.8.4.4;
+    default-lease-time 600;
+    max-lease-time 7200;
+}
+```
+
+## Explicación
+
+### Red
+
+```conf
+subnet 172.16.5.0 netmask 255.255.255.0
+```
+
+El servidor DHCP trabaja sobre la red:
+
+```text
+172.16.5.0/24
+```
+
+### Rango
+
+```conf
+range 172.16.5.151 172.16.5.200;
+```
+
+Puede repartir direcciones entre:
+
+```text
+172.16.5.151 - 172.16.5.200
+```
+
+### Puerta de enlace
+
+```conf
+option routers 172.16.5.150;
+```
+
+Los clientes reciben:
+
+```text
+172.16.5.150
+```
+
+como puerta de enlace.
+
+### DNS
+
+```conf
+option domain-name-servers 8.8.8.8, 8.8.4.4;
+```
+
+Los clientes reciben los DNS:
+
+```text
+8.8.8.8
+8.8.4.4
+```
+
+### Tiempo de concesión normal
+
+```conf
+default-lease-time 600;
+```
+
+La concesión normal dura:
+
+```text
+10 minutos
+```
+
+### Tiempo máximo
+
+```conf
+max-lease-time 7200;
+```
+
+La concesión puede durar como máximo:
+
+```text
+2 horas
+```
+
+---
+
+# Resumen de las opciones
+
+| Opción | Función |
+|---|---|
+| `subnet` | Define la red que gestiona DHCP |
+| `netmask` | Define la máscara de la red |
+| `range` | Rango de IP que puede repartir |
+| `option routers` | Puerta de enlace para los clientes |
+| `option domain-name-servers` | DNS para los clientes |
+| `option domain-name` | Nombre de dominio |
+| `option subnet-mask` | Máscara enviada al cliente |
+| `option broadcast-address` | Dirección broadcast |
+| `default-lease-time` | Tiempo normal de concesión |
+| `max-lease-time` | Tiempo máximo de concesión |
+| `authoritative` | Indica que es el DHCP autorizado de la red |
+| `ddns-update-style` | Configura las actualizaciones DNS dinámicas |
+| `log-facility` | Configura los registros del servidor |
+| `host` | Configuración para un dispositivo concreto |
+| `hardware ethernet` | Dirección MAC del cliente |
+| `fixed-address` | IP fija entregada mediante DHCP |
+| `range dynamic-bootp` | Rango para clientes BOOTP |
+| `filename` | Archivo utilizado para arranque por red |
+| `server-name` | Servidor relacionado con el arranque |
+| `class` | Crea una clase de clientes |
+| `match` | Define qué clientes pertenecen a una clase |
+| `shared-network` | Agrupa varias subredes |
+| `pool` | Crea un grupo de direcciones |
+| `allow members of` | Permite una clase dentro de un pool |
+| `deny members of` | Bloquea una clase dentro de un pool |
+
+## Idea principal
+
+El archivo:
+
+```bash
+/etc/dhcp/dhcpd.conf
+```
+
+es donde configuramos cómo va a funcionar el servidor DHCP.
+
+En él podemos decidir principalmente:
+
+- Qué red queremos gestionar.
+- Qué rango de IP queremos repartir.
+- Qué puerta de enlace tendrán los clientes.
+- Qué DNS utilizarán.
+- Cuánto tiempo pueden utilizar una IP.
+- Reservar una IP concreta para una determinada MAC.
+- Crear diferentes grupos de clientes y aplicarles reglas distintas.
+
+En nuestro caso el servidor trabaja en `172.16.5.0/24` y puede entregar automáticamente direcciones desde `172.16.5.151` hasta `172.16.5.200`.
 ```
 
 De esta forma queda demostrado que **el servidor DHCP de Windows Server está funcionando y está asignando direcciones IP automáticamente a los clientes dentro del rango que hemos configurado**.
