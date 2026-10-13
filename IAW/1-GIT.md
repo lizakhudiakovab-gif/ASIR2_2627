@@ -1,303 +1,314 @@
+
 1. ¿Qué es Git?
 
 Git es un sistema de control de versiones distribuido.
 
-Sirve para:
-
+¿Para qué sirve?
 Guardar versiones de un proyecto.
-Volver a estados anteriores si algo sale mal.
-Trabajar en equipo sin sobrescribir el trabajo de otros.
-Mantener un historial de los cambios realizados.
+Volver a estados anteriores si ocurre algún error.
+Trabajar en equipo sin sobrescribir cambios de otros usuarios.
+Mantener un historial de todos los cambios realizados.
+Ejemplo
 
-Ejemplo:
+Imagina que estás realizando una práctica y hoy guardas una versión de tu trabajo.
 
-Imagina que estás haciendo una práctica y hoy guardas una versión.
+Mañana modificas algo y el proyecto deja de funcionar.
 
-Mañana rompes el código.
-
-Con Git puedes volver a la versión de ayer.
+Con Git puedes recuperar la versión que guardaste anteriormente.
 
 2. ¿Qué es GitHub?
 
-GitHub es una plataforma en Internet donde se almacenan repositorios Git.
+GitHub es una plataforma online que permite almacenar y compartir repositorios Git.
 
-Piensa así:
+Diferencia entre Git y GitHub
+Git = Herramienta instalada en tu ordenador.
+GitHub = Servidor donde se almacenan repositorios Git.
 
-Git = herramienta local.
-GitHub = servidor donde guardas repositorios para compartirlos.
+Esquema
+Tu PC (Git) <----> GitHub (Internet)
 
-Ejemplo:
-
-Plain Text
-Tu PC (Git) <---> GitHub (Internet)
 3. Instalación de Git
 Ubuntu
-Shell
 sudo apt-get update
 sudo apt-get install git
+
 Windows
 
-Descargar desde:
+Descargar Git desde:
 
-Plain Text
 https://git-scm.com/downloads
+
 4. Configuración inicial
 
-Git necesita saber quién eres.
+Git necesita saber quién eres para registrar correctamente los cambios realizados.
 
-Shell
+Configurar nombre
 git config --global user.name "Liza"
+
+
+¿Para qué sirve?
+
+Guarda el nombre del usuario que aparecerá en los commits.
+
+Configurar correo electrónico
 git config --global user.email "liza@gmail.com"
 
-Comprobar configuración:
 
-Shell
+¿Para qué sirve?
+
+Guarda el correo electrónico asociado a los commits.
+
+Ver configuración
 git config --list
+
+
+¿Para qué sirve?
+
+Muestra toda la configuración actual de Git.
+
 5. Partes de un repositorio Git
 
-Existen 4 zonas principales:
+Un repositorio Git está dividido en cuatro zonas principales:
 
 Workspace
 
-Es donde trabajas normalmente.
+Zona donde trabajamos habitualmente.
 
-Plain Text
+Aquí creamos, modificamos o eliminamos archivos.
+
 archivo.txt
-
-Aquí modificas archivos.
 
 Staging Area
 
-Zona temporal.
+Zona temporal donde se preparan los cambios antes de guardarlos.
 
-Aquí seleccionas qué cambios quieres guardar.
-
-Shell
 git add archivo.txt
+
+
+¿Para qué sirve?
+
+Añadir archivos al área de preparación.
+
 Local Repository
 
-Almacén local de commits.
+Repositorio local almacenado en nuestro ordenador.
 
-Shell
 git commit
+
+
+¿Para qué sirve?
+
+Guardar cambios definitivamente en el historial del proyecto.
+
 Remote Repository
 
-Repositorio en GitHub.
+Repositorio remoto almacenado en GitHub.
 
-Shell
 git push
 
 
-1. Configurar Git
-¿Qué se hace?
+¿Para qué sirve?
 
-Se indica a Git quién eres para que registre tu nombre y correo en cada cambio.
+Enviar los cambios locales a GitHub.
 
-Comandos
-git config --global user.name "Tu Nombre"
+6. Estados de los archivos en Git
 
+Los archivos pueden encontrarse en distintos estados:
 
-¿Para qué sirve? Guarda tu nombre de usuario en Git.
+Untracked
 
-git config --global user.email "correo@correo.com"
+Archivo nuevo que Git todavía no controla.
 
+archivo.txt
 
-¿Para qué sirve? Guarda tu correo electrónico en Git.
+Modified
 
-git config --list
+Archivo que ha sido modificado después de su último commit.
 
+Staged
 
-¿Para qué sirve? Muestra toda la configuración actual de Git.
+Archivo preparado para ser guardado.
 
-2. Crear un repositorio
-¿Qué se hace?
+Committed
 
-Se convierte una carpeta normal en un proyecto controlado por Git.
+Archivo cuyos cambios ya forman parte del historial.
 
-Comando
+7. Crear un repositorio
+Inicializar repositorio
 git init
 
 
-¿Para qué sirve? Crea el repositorio Git y la carpeta oculta .git, donde se almacena todo el historial.
+¿Para qué sirve?
 
-3. Comprobar el estado de los archivos
-¿Qué se hace?
+Convierte una carpeta normal en un repositorio Git y crea la carpeta oculta .git.
 
-Se consulta qué archivos han cambiado y en qué estado están.
-
-Comando
+8. Consultar el estado del repositorio
+Ver estado
 git status
 
 
-¿Para qué sirve? Muestra:
+¿Para qué sirve?
 
-Archivos nuevos (untracked).
-Archivos modificados (modified).
-Archivos preparados (staged).
+Muestra:
+
+Archivos nuevos.
+Archivos modificados.
+Archivos preparados.
 Rama actual.
 
-Es el comando más utilizado.
+✅ Es uno de los comandos más utilizados.
 
-4. Preparar archivos para guardarlos
-¿Qué se hace?
-
-Se seleccionan los archivos que se incluirán en la próxima versión.
-
-Comandos
+9. Preparar cambios
+Añadir un archivo
 git add archivo.txt
 
 
-¿Para qué sirve? Añade un archivo al área de preparación (staging area).
+¿Para qué sirve?
 
+Prepara un archivo para incluirlo en el próximo commit.
+
+Añadir todos los archivos
 git add -A
 
 
-¿Para qué sirve? Añade todos los cambios realizados en el proyecto.
+¿Para qué sirve?
 
-5. Guardar una versión del proyecto
-¿Qué se hace?
+Añade todos los cambios realizados al área de preparación.
 
-Se crea una versión permanente de los cambios.
-
-Comando
+10. Crear un commit
+Guardar cambios
 git commit -m "Descripción de los cambios"
 
 
-¿Para qué sirve? Crea un commit que guarda una copia de los cambios realizados.
+¿Para qué sirve?
 
-6. Modificar el último commit
-¿Qué se hace?
+Guarda una nueva versión del proyecto.
 
-Se corrigen errores en el último commit.
-
-Comandos
+¿Qué contiene un commit?
+Cambios realizados.
+Autor del cambio.
+Fecha y hora.
+Mensaje descriptivo.
+11. Modificar el último commit
+Añadir archivos olvidados
 git commit --amend
 
 
-¿Para qué sirve? Añadir archivos olvidados al último commit.
+¿Para qué sirve?
 
+Permite añadir cambios al último commit realizado.
+
+Cambiar mensaje del commit
 git commit --amend -m "Nuevo mensaje"
 
 
-¿Para qué sirve? Cambiar el mensaje del último commit.
+¿Para qué sirve?
 
-7. Sacar archivos del área de preparación
-¿Qué se hace?**
+Modifica el mensaje del último commit.
 
-Quitar un archivo del staging porque todavía quieres seguir editándolo.
-
-Comando
+12. Quitar archivos del área de preparación
+Sacar un archivo del Staging Area
 git reset HEAD archivo.txt
 
 
-¿Para qué sirve? Devuelve el archivo al Workspace sin eliminar los cambios.
+¿Para qué sirve?
 
-8. Deshacer cambios
-¿Qué se hace?
+Devuelve el archivo al Workspace manteniendo las modificaciones realizadas.
 
-Volver a la última versión guardada.
-
-Comandos
+13. Deshacer cambios
+Recuperar la versión guardada
 git checkout -- archivo.txt
 
 
-o actualmente
+o
 
 git restore archivo.txt
 
 
-¿Para qué sirve? Elimina los cambios realizados y recupera la versión guardada en el último commit.
+¿Para qué sirve?
 
-⚠️ Los cambios se pierden.
+Descarta los cambios realizados y recupera la última versión guardada.
 
-9. Borrar archivos
-¿Qué se hace?**
+⚠️ Los cambios se eliminan definitivamente.
 
-Eliminar archivos controlados por Git.
-
-Comando
+14. Borrar archivos
+Eliminar un archivo controlado por Git
 git rm archivo.txt
 
 
-¿Para qué sirve? Borra el archivo y registra su eliminación para el próximo commit.
+¿Para qué sirve?
 
-Después normalmente:
+Elimina el archivo y registra su eliminación.
 
+Guardar la eliminación
 git commit -m "Eliminar archivo"
 
-10. Renombrar o mover archivos
-¿Qué se hace?
-
-Cambiar el nombre o ubicación de un archivo.
-
-Comando
-git mv archivo.txt nuevo.txt
+15. Renombrar o mover archivos
+Cambiar nombre o ubicación
+git mv archivo.txt nuevo_nombre.txt
 
 
-¿Para qué sirve? Renombra o mueve un archivo manteniendo el seguimiento de Git.
+¿Para qué sirve?
 
-11. Clonar un repositorio remoto
-¿Qué se hace?
+Renombra o mueve un archivo manteniendo su historial dentro de Git.
 
-Copiar un proyecto de GitHub al ordenador.
-
-Comando
+16. Clonar un repositorio remoto
+Descargar un repositorio
 git clone URL
 
 
-¿Para qué sirve? Descarga completamente un repositorio remoto.
+¿Para qué sirve?
 
-12. Conectar un repositorio local con GitHub
-¿Qué se hace?
+Copia un repositorio completo desde GitHub a tu ordenador.
 
-Vincular tu proyecto con un repositorio remoto.
-
-Comando
+17. Conectar un repositorio local con GitHub
+Añadir repositorio remoto
 git remote add origin URL
 
 
-¿Para qué sirve? Añade la dirección del repositorio de GitHub.
+¿Para qué sirve?
 
-Comprobar:
+Asocia el repositorio local con un repositorio en GitHub.
 
+Comprobar repositorios remotos
 git remote -v
 
 
-¿Para qué sirve? Muestra los repositorios remotos configurados.
+¿Para qué sirve?
 
-13. Subir cambios a GitHub
-¿Qué se hace?
+Muestra los repositorios remotos configurados.
 
-Enviar las versiones guardadas al repositorio remoto.
-
-Comando
+18. Subir cambios a GitHub
+Enviar cambios
 git push
 
 
-¿Para qué sirve? Sube los commits del ordenador a GitHub.
+¿Para qué sirve?
 
-14. Descargar cambios desde GitHub
-¿Qué se hace?
+Sube los commits locales al repositorio remoto.
 
-Actualizar el proyecto local con los cambios realizados por otras personas.
-
-Comando
+19. Descargar cambios de GitHub
+Actualizar repositorio local
 git pull
 
 
-¿Para qué sirve? Descarga y fusiona los cambios del repositorio remoto.
+¿Para qué sirve?
 
-15. Trabajar con ramas
-¿Qué se hace?**
+Descarga y fusiona los cambios del repositorio remoto.
 
-Crear líneas independientes de trabajo.
+20. Trabajar con ramas (Branches)
 
-Comandos
+Las ramas permiten desarrollar funcionalidades sin modificar la rama principal.
+
+Crear una rama
 git branch nombre-rama
 
 
-¿Para qué sirve? Crear una nueva rama.
+¿Para qué sirve?
 
+Crea una nueva rama.
+
+Cambiar de rama
 git checkout nombre-rama
 
 
@@ -306,48 +317,84 @@ o
 git switch nombre-rama
 
 
-¿Para qué sirve? Cambiar a otra rama.
+¿Para qué sirve?
 
-16. Ignorar archivos
-¿Qué se hace?
+Permite trabajar en otra rama.
 
-Evitar que Git controle archivos innecesarios.
+21. Archivo .gitignore
 
-Archivo
-.gitignore
+Es un archivo especial donde se indican los ficheros que Git debe ignorar.
 
-
-Ejemplo:
-
+Ejemplo
 *.log
 *.tmp
 
+¿Para qué sirve?
 
-¿Para qué sirve? Indica a Git qué archivos no debe guardar.
+Evita que Git controle archivos temporales o innecesarios.
 
-17. Consultar el historial
-¿Qué se hace?
-
-Ver todas las versiones que se han creado.
-
-Comandos
+22. Historial de commits
+Ver historial completo
 git log
 
 
-¿Para qué sirve? Muestra el historial completo de commits.
+¿Para qué sirve?
 
+Muestra toda la información de los commits realizados.
+
+Ver historial resumido
 git log --oneline
 
 
-¿Para qué sirve? Muestra una versión resumida del historial.
+¿Para qué sirve?
 
+Muestra una línea por cada commit.
+
+Ver ramas y fusiones
 git log --graph
 
 
-¿Para qué sirve? Muestra gráficamente ramas y fusiones.
+¿Para qué sirve?
 
-Esquema final para examen
-git init
+Representa gráficamente las ramas y merges del proyecto.
+
+Esquema general de trabajo con Git
+Workspace
+    ↓
+git add
+    ↓
+Staging Area
+    ↓
+git commit
+    ↓
+Local Repository
+    ↓
+git push
+    ↓
+GitHub
+
+Resumen rápido para examen
+Comando	Funcióngit init	Crear repositorio
+git status	Ver estado
+git add	Preparar cambios
+git commit	Guardar versión
+git commit --amend	Modificar último commit
+git reset HEAD	Sacar archivos del staging
+git restore	Deshacer cambios
+git rm	Borrar archivos
+git mv	Renombrar o mover archivos
+git clone	Clonar repositorio
+git remote add	Conectar con GitHub
+git push	Subir cambios
+git pull	Descargar cambios
+git branch	Crear rama
+git checkout / git switch	Cambiar de rama
+git log	Ver historial
+.gitignore	Ignorar archivos
+
+✅ Regla de oro de Git:
+
+Modificar archivo
 ↓
 git status
 ↓
@@ -356,21 +403,5 @@ git add
 git commit
 ↓
 git push
-↓
-GitHub
-↓
-git pull
 
-Significado rápido
-git init → Crear repositorio.
-git status → Ver estado.
-git add → Preparar cambios.
-git commit → Guardar versión.
-git push → Subir a GitHub.
-git pull → Descargar cambios.
-git log → Ver historial.
-git rm → Borrar archivos.
-git mv → Renombrar/mover archivos.
-git clone → Copiar repositorio remoto.
-git branch → Crear rama.
-git checkout / git switch → Cambiar de rama.
+
