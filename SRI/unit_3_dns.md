@@ -754,3 +754,91 @@ Después probamos Dnsmasq como alternativa más sencilla.
 Finalmente estudiamos cómo integrar DHCP con DNS mediante DDNS para actualizar automáticamente los registros cuando cambian las direcciones IP.
 
 El objetivo es entender cómo trabajan juntos los servicios de red y cómo permiten que los equipos puedan localizarse y comunicarse utilizando nombres de dominio.
+
+
+Práctica: Registro del dominio liza.edu
+1. Objetivo
+El objetivo de esta práctica es buscar una empresa de pago que permita registrar dominios en Internet, consultar sus características y condiciones e intentar registrar el dominio liza.edu.
+Voy a realizar capturas de pantalla de todo el proceso hasta llegar al paso previo al pago, sin llegar a comprar el dominio.
+2. Empresa elegida: IONOS
+Página web: https://www.ionos.es/dominios/dominios
+He elegido IONOS porque es una empresa que ofrece servicios de registro de dominios y alojamiento web. Tiene precios promocionales, herramientas de configuración y asistencia técnica.
+3. Características y condiciones
+Dominio que quiero registrar: liza.edu
+Dominio alternativo: liza.com
+Precio inicial de referencia para .com: 1 €/año + IVA en promoción.
+Precio de renovación de referencia: 15 €/año + IVA.
+Certificado SSL: incluido según las condiciones del producto.
+Gestión DNS: permite configurar los registros DNS.
+Subdominios: hasta 10.000 según el plan.
+Seguridad: protección y bloqueo de transferencia.
+Atención al cliente: disponible las 24 horas.
+Alojamiento web: se puede contratar por separado.
+Los precios pueden cambiar dependiendo de las promociones y las condiciones del contrato.
+
+4. Proceso de registro
+Paso 1. Entrar en la página
+Accedo a la página oficial de IONOS y entro en el apartado de registro de dominios.
+
+Paso 2. Buscar el dominio
+En el buscador escribo liza.edu y compruebo si está disponible para registrarlo.
+La extensión .edu está restringida principalmente a instituciones de educación superior acreditadas de Estados Unidos, por lo que no se puede registrar libremente como particular.
+
+Paso 3. Revisar las condiciones
+Compruebo el precio del primer año, el coste de renovación, la duración del contrato y los servicios incluidos.
+También reviso si hay servicios adicionales de pago para no contratar nada innecesario.
+
+Paso 5. Llegar al proceso de pago
+Continúo con el proceso de contratación hasta llegar al último paso antes de realizar el pago.Me lleva a una pantalla con varias opciones.
+
+
+
+Comparación de dominios gratuitos y de pago
+1. Empresa gratuita: Duck DNS
+Página web: https://www.duckdns.org/
+Duck DNS es un servicio gratuito que permite crear subdominios y asociarlos a una dirección IP.
+Características:
+Precio: 0 €, sin cuotas anuales.
+Subdominio: liza.duckdns.org (si está disponible).
+Permite configurar DNS dinámico.
+Compatible con IPv4 e IPv6.
+Permite actualizar automáticamente la IP.
+No incluye alojamiento web.
+No permite registrar un dominio propio como liza.com.
+2. Comparación con IONOS (de pago)
+Característica
+Duck DNS
+IONOS
+Precio inicial
+Gratis
+1 €/año + IVA (.com en oferta)
+Renovación
+Gratis
+15 €/año + IVA
+Dominio propio
+No
+Sí
+DNS
+Dinámico
+Gestión DNS completa
+Subdominios
+Gratuitos
+Hasta 10.000
+SSL
+No incluido para tu web
+Incluido
+Alojamiento web
+No
+Se contrata aparte
+Uso recomendado
+Prácticas y servidores
+Webs personales y profesionales
+
+
+3. Conclusión
+Duck DNS es mejor para realizar prácticas porque es gratuito y permite trabajar con DNS dinámico.
+IONOS ofrece más posibilidades, ya que permite registrar un dominio propio y tiene más opciones de configuración y servicios.
+Para una práctica elegiría Duck DNS, pero para una página web profesional elegiría IONOS.
+
+
+
